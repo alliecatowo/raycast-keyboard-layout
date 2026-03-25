@@ -5,9 +5,28 @@ import { environment } from "@raycast/api";
 import { BoardProfile, Layer, PhysicalKey } from "../types";
 import { numericKeycodeToString } from "./keycode-map";
 
-/** Path to the helper script */
+/** Path to the helper script.
+ * In dev mode, the extension source is at environment.extensionPath (if available)
+ * or we resolve from the assetsPath. The helper lives in the source repo, not the
+ * Raycast install directory, since native modules can't be bundled.
+ */
 function getHelperPath(): string {
-  return path.join(environment.assetsPath, "..", "helper", "vial-reader.js");
+  // The helper lives in the source repo alongside package.json
+  // environment.assetsPath points to the installed extension's assets/ dir
+  // We need to find the SOURCE directory where helper/ lives
+  const candidates = [
+    // Dev mode: resolve from extension source path
+    path.join(environment.assetsPath, "..", "helper", "vial-reader.js"),
+    // Source directory (hardcoded for dev — will be configurable later)
+    path.join(process.env.HOME || "~", "Develop", "raycast-keyboard-layout", "helper", "vial-reader.js"),
+  ];
+
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+
+  // Fallback
+  return candidates[candidates.length - 1];
 }
 
 /** Find a working node binary that can load native modules */

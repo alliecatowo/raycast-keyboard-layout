@@ -1,0 +1,11 @@
+{
+  "name": "keyviz-vial-helper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone helper for USB HID communication with Vial keyboards",
+  "main": "vial-reader.js",
+  "dependencies": {
+    "node-hid": "^3.1.0",
+    "lzma": "^2.3.2"
+  }
+}

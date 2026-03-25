@@ -45,6 +45,13 @@
       "keywords": ["import", "add", "qmk", "keymap"]
     },
     {
+      "name": "detect-board",
+      "title": "Detect Keyboard",
+      "description": "Auto-detect and read your Vial keyboard over USB",
+      "mode": "view",
+      "keywords": ["detect", "usb", "vial", "scan", "connect", "plug"]
+    },
+    {
       "name": "quick-layer",
       "title": "Quick Layer Peek",
       "description": "Instantly view a specific layer",

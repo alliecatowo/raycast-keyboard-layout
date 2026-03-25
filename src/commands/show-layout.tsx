@@ -6,6 +6,7 @@ import { getBoards } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import ImportKeymapCommand from "./import-keymap";
+import DetectBoardCommand from "./detect-board";
 
 export default function ShowLayoutCommand() {
   const [board, setBoard] = useState<BoardProfile | undefined>();
@@ -36,10 +37,11 @@ export default function ShowLayoutCommand() {
   if (noBoards && !isLoading) {
     return (
       <Detail
-        markdown={`# Welcome to Keyboard Layout Visualizer\n\nNo boards imported yet. Import your QMK keymap to get started.\n\n> Soon: plug in your Vial-enabled board and we'll read it automatically!`}
+        markdown={`# Welcome to Keyboard Layout Visualizer\n\nNo boards loaded yet.\n\n**Plug in your Vial keyboard** and use Detect Keyboard to read it automatically, or import a QMK keymap.json file.`}
         actions={
           <ActionPanel>
-            <Action.Push title="Import Keymap" icon={Icon.Plus} target={<ImportKeymapCommand />} />
+            <Action.Push title="Detect Keyboard (USB)" icon={Icon.Plug} target={<DetectBoardCommand />} />
+            <Action.Push title="Import Keymap File" icon={Icon.Document} target={<ImportKeymapCommand />} />
           </ActionPanel>
         }
       />

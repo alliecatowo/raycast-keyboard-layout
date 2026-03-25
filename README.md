@@ -1,2 +1,3 @@
-# raycast-keyboard-layout
-A keyboard layout visualizer for qmk and zmk users with raycast! Never forget your layers again!
+# Keyboard Layout Visualizer
+
+Visualizes your qmk/zmk keyboard layout and layers so you never forget where a key is again!

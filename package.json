@@ -18,9 +18,46 @@
   "commands": [
     {
       "name": "show-layout",
-      "title": "Show Layout",
-      "description": "",
-      "mode": "view"
+      "title": "View Keymap",
+      "description": "Display your active keyboard's layout and layers",
+      "mode": "view",
+      "keywords": ["keyboard", "layout", "keymap", "layer", "qmk"]
+    },
+    {
+      "name": "search-keys",
+      "title": "Find a Key",
+      "description": "Search for any key across all your boards and layers",
+      "mode": "view",
+      "keywords": ["search", "find", "key", "where"]
+    },
+    {
+      "name": "manage-boards",
+      "title": "My Boards",
+      "description": "Browse and manage your keyboard profiles",
+      "mode": "view",
+      "keywords": ["board", "keyboard", "manage", "switch"]
+    },
+    {
+      "name": "import-keymap",
+      "title": "Import Keymap",
+      "description": "Import a QMK keymap.json file",
+      "mode": "view",
+      "keywords": ["import", "add", "qmk", "keymap"]
+    },
+    {
+      "name": "quick-layer",
+      "title": "Quick Layer Peek",
+      "description": "Instantly view a specific layer",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "layer",
+          "type": "text",
+          "placeholder": "Layer number (0-9)",
+          "required": false
+        }
+      ],
+      "keywords": ["layer", "peek", "quick"]
     }
   ],
   "dependencies": {

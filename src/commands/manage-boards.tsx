@@ -16,6 +16,7 @@ import { deleteBoard, getBoards } from "../lib/storage/boards";
 import { getActiveBoardId, setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import ImportKeymapCommand from "./import-keymap";
+import BoardDetailView from "./board-detail-view";
 
 export default function ManageBoardsCommand() {
   const [boards, setBoards] = useState<BoardProfile[]>([]);
@@ -33,7 +34,7 @@ export default function ManageBoardsCommand() {
     load();
   }, []);
 
-  async function handleSetActive(board: BoardProfile) {
+  async function handleSetActiveAndView(board: BoardProfile) {
     await setActiveBoardId(board.id);
     setActiveId(board.id);
     showToast({ style: Toast.Style.Success, title: `Active: ${board.name}` });
@@ -99,8 +100,25 @@ export default function ManageBoardsCommand() {
               accessory={isActive ? { icon: { source: Icon.Checkmark, tintColor: Color.Green } } : undefined}
               actions={
                 <ActionPanel>
-                  <Action title="Set as Active" icon={Icon.Checkmark} onAction={() => handleSetActive(board)} />
-                  <Action.Push title="Import New Board" icon={Icon.Plus} target={<ImportKeymapCommand />} />
+                  <Action.Push
+                    title="View Board"
+                    icon={Icon.Eye}
+                    target={<BoardDetailView board={board} />}
+                  />
+                  {!isActive && (
+                    <Action
+                      title="Set as Active"
+                      icon={Icon.Checkmark}
+                      shortcut={{ modifiers: ["cmd"], key: "return" }}
+                      onAction={() => handleSetActiveAndView(board)}
+                    />
+                  )}
+                  <Action.Push title="Import New Board" icon={Icon.Plus} target={<ImportKeymapCommand />} shortcut={{ modifiers: ["cmd"], key: "n" }} />
+                  <Action.Open
+                    title="Open Vial"
+                    target="vial"
+                    shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
+                  />
                   <Action
                     title="Delete Board"
                     icon={Icon.Trash}

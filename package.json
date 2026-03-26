@@ -203,7 +203,8 @@
   "dependencies": {
     "@raycast/api": "^1.104.11",
     "@raycast/utils": "^1.17.0",
-    "koffi": "^2.15.2"
+    "koffi": "^2.15.2",
+    "lzma": "^2.3.2"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.0.4",

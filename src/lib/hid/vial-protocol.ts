@@ -9,8 +9,6 @@
 import {
   initHid,
   enumerateDevices,
-  openDevice,
-  closeDevice,
   sendAndReceive,
   HidDeviceInfo,
 } from "./koffi-hid";
@@ -34,8 +32,8 @@ const VIA_SWITCH_MATRIX_STATE = 0x03;
 // Vial commands (prefixed with 0xFE)
 const CMD_VIA_VIAL_PREFIX = 0xfe;
 const CMD_VIAL_GET_KEYBOARD_ID = 0x00;
-const CMD_VIAL_GET_SIZE = 0x01;
-const CMD_VIAL_GET_DEFINITION = 0x02;
+// CMD_VIAL_GET_SIZE = 0x01 and CMD_VIAL_GET_DEFINITION = 0x02
+// are used in vial-reader-inprocess.ts directly
 const CMD_VIAL_GET_UNLOCK_STATUS = 0x05;
 const CMD_VIAL_QMK_SETTINGS_QUERY = 0x09;
 const CMD_VIAL_QMK_SETTINGS_GET = 0x0a;
@@ -85,10 +83,7 @@ export function getLayerCount(device: unknown): number {
 }
 
 /** Read the keymap buffer in chunks */
-export function readKeymapBuffer(
-  device: unknown,
-  totalBytes: number,
-): Buffer {
+export function readKeymapBuffer(device: unknown, totalBytes: number): Buffer {
   const keymapBuffer = Buffer.alloc(totalBytes);
 
   for (let offset = 0; offset < totalBytes; offset += BUFFER_FETCH_CHUNK) {

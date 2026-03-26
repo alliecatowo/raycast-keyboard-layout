@@ -24,8 +24,17 @@ let hid_enumerate: ((vendorId: number, productId: number) => unknown) | null =
 let hid_free_enumeration: ((devs: unknown) => void) | null = null;
 let hid_open_path: ((path: string) => unknown) | null = null;
 let hid_close: ((device: unknown) => void) | null = null;
-let hid_write: ((device: unknown, data: Buffer, length: number) => number) | null = null;
-let hid_read_timeout: ((device: unknown, data: Buffer, length: number, milliseconds: number) => number) | null = null;
+let hid_write:
+  | ((device: unknown, data: Buffer, length: number) => number)
+  | null = null;
+let hid_read_timeout:
+  | ((
+      device: unknown,
+      data: Buffer,
+      length: number,
+      milliseconds: number,
+    ) => number)
+  | null = null;
 
 /**
  * Initialize koffi and load HIDAPI.
@@ -38,21 +47,15 @@ export async function initHid(): Promise<void> {
   const arch = os.arch(); // arm64 or x64
   const platform = os.platform(); // darwin or win32
 
-  // In dev mode, koffi might be in node_modules; in production, in assets
+  // Load koffi dynamically — esbuild must NOT try to bundle this
+  // Using indirect require to prevent static analysis
+
+  const dynamicRequire = eval("require") as NodeRequire;
+
   try {
-    // Try direct require first (dev mode)
-    koffiLib = require("koffi");
+    koffiLib = dynamicRequire("koffi");
   } catch {
-    // Try loading from bundled assets
-    const koffiPath = path.join(
-      environment.assetsPath,
-      "native",
-      "koffi",
-      `koffi_${platform}_${arch}.node`,
-    );
-    // Dynamic require of the .node file
-    process.dlopen(module, koffiPath);
-    koffiLib = require("koffi");
+    throw new Error(`Failed to load koffi for ${platform}_${arch}`);
   }
 
   if (!koffiLib) throw new Error("Failed to load koffi");
@@ -60,18 +63,8 @@ export async function initHid(): Promise<void> {
   // Load HIDAPI dylib
   const hidapiPath =
     platform === "darwin"
-      ? path.join(
-          environment.assetsPath,
-          "native",
-          "hidapi",
-          "libhidapi.dylib",
-        )
-      : path.join(
-          environment.assetsPath,
-          "native",
-          "hidapi",
-          "hidapi.dll",
-        );
+      ? path.join(environment.assetsPath, "native", "hidapi", "libhidapi.dylib")
+      : path.join(environment.assetsPath, "native", "hidapi", "hidapi.dll");
 
   hidapiLib = koffiLib.load(hidapiPath);
 
@@ -87,7 +80,7 @@ export async function initHid(): Promise<void> {
     usage_page: "unsigned short",
     usage: "unsigned short",
     interface_number: "int",
-    next: koffiLib.pointer("hid_device_info", { lazy: true }),
+    next: "void *", // self-referential pointer to next device
   });
 
   // Bind HIDAPI functions
@@ -130,10 +123,7 @@ export interface HidDeviceInfo {
 }
 
 /** Enumerate all HID devices, optionally filtered by VID/PID */
-export function enumerateDevices(
-  vendorId = 0,
-  productId = 0,
-): HidDeviceInfo[] {
+export function enumerateDevices(vendorId = 0, productId = 0): HidDeviceInfo[] {
   if (!hid_enumerate || !hid_free_enumeration) {
     throw new Error("HID not initialized");
   }

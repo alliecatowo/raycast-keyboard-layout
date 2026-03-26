@@ -3,15 +3,15 @@ import {
   detectAllDevicesViaAdapters,
   getAdapters,
 } from "./adapter";
-import { VialAdapter } from "./vial-adapter";
+import { KoffiVialAdapter } from "./koffi-vial-adapter";
 import { ZmkAdapter } from "./zmk-adapter";
 
 export type { DetectedDevice, FirmwareAdapter } from "./adapter";
-export { VialAdapter } from "./vial-adapter";
+export { KoffiVialAdapter } from "./koffi-vial-adapter";
 export { ZmkAdapter } from "./zmk-adapter";
 
-// Register all adapters
-registerAdapter(new VialAdapter());
+// Register all adapters — koffi adapter runs in-process (no child_process)
+registerAdapter(new KoffiVialAdapter());
 registerAdapter(new ZmkAdapter());
 
 /** Detect all connected keyboards across all firmware types */

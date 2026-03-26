@@ -2,6 +2,8 @@ import { Action, ActionPanel, Detail, Form, Icon, List, showToast, Toast, useNav
 import { useEffect, useState } from "react";
 import { readBoardSettings, writeBoardSetting, writeRgb } from "../lib/vial/client";
 import { getActiveBoard } from "../lib/storage/active-board";
+import { updateBoard } from "../lib/storage/boards";
+import { BoardProfile } from "../lib/types";
 
 interface QmkSetting {
   name: string;
@@ -24,25 +26,36 @@ interface RgbValues {
 
 export default function BoardSettingsCommand() {
   const { push } = useNavigation();
+  const [board, setBoard] = useState<BoardProfile>();
   const [settings, setSettings] = useState<Record<number, QmkSetting>>({});
   const [rgb, setRgb] = useState<RgbValues | null>(null);
   const [lightingType, setLightingType] = useState("none");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
-  const [boardName, setBoardName] = useState("Keyboard");
 
   useEffect(() => {
     async function load() {
       try {
-        const board = await getActiveBoard();
-        if (board) setBoardName(board.name);
+        const activeBoard = await getActiveBoard();
+        if (!activeBoard) {
+          setError("No board loaded. Add a board first.");
+          return;
+        }
+        setBoard(activeBoard);
 
-        const data = await readBoardSettings();
-        setSettings(data.settings);
-        setRgb(data.rgb);
-        setLightingType(data.lightingType);
+        // Only try USB settings for Vial/QMK boards
+        if (activeBoard.firmware === "qmk") {
+          try {
+            const data = await readBoardSettings();
+            setSettings(data.settings);
+            setRgb(data.rgb);
+            setLightingType(data.lightingType);
+          } catch {
+            // Board not connected — show stored settings only
+          }
+        }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to read settings. Is your board plugged in?");
+        setError(e instanceof Error ? e.message : "Failed to load board");
       } finally {
         setIsLoading(false);
       }
@@ -50,13 +63,17 @@ export default function BoardSettingsCommand() {
     load();
   }, []);
 
-  if (error) {
+  if (error || !board) {
     return (
       <Detail
-        markdown={`# Board Settings\n\n${error}\n\nMake sure your Vial keyboard is connected via USB.`}
+        isLoading={isLoading}
+        markdown={error ? `# Board Settings\n\n${error}` : ""}
       />
     );
   }
+
+  const isZmk = board.firmware === "zmk";
+  const isQmk = board.firmware === "qmk";
 
   // Group settings by tab
   const tabs = new Map<string, QmkSetting[]>();
@@ -79,8 +96,43 @@ export default function BoardSettingsCommand() {
   }
 
   return (
-    <List isLoading={isLoading} navigationTitle={`${boardName} — Settings`}>
-      {rgb && (
+    <List isLoading={isLoading} navigationTitle={`${board.name} — Settings`}>
+      {/* Board info */}
+      <List.Section title="Board Info">
+        <List.Item icon={Icon.Keyboard} title="Board" subtitle={board.name} accessories={[{ text: board.firmware.toUpperCase() }]} />
+        <List.Item icon={Icon.Code} title="Keyboard" subtitle={board.keyboard} />
+        <List.Item icon={Icon.Layers} title="Layers" subtitle={String(board.layers.length)} />
+      </List.Section>
+
+      {/* Layer names (editable for all firmware types — stored locally) */}
+      <List.Section title="Layer Names" subtitle="Rename your layers">
+        {board.layers.map((l) => (
+          <List.Item
+            key={l.index}
+            icon={Icon.Text}
+            title={l.name}
+            subtitle={`Layer ${l.index}`}
+            actions={
+              <ActionPanel>
+                <Action title="Rename" icon={Icon.Pencil} onAction={() => push(
+                  <RenameLayerForm board={board} layerIndex={l.index} currentName={l.name}
+                    onSaved={(newName) => {
+                      const updated = { ...board, layers: board.layers.map((layer) =>
+                        layer.index === l.index ? { ...layer, name: newName } : layer
+                      )};
+                      updateBoard(updated);
+                      setBoard(updated);
+                    }}
+                  />
+                )} />
+              </ActionPanel>
+            }
+          />
+        ))}
+      </List.Section>
+
+      {/* RGB (Vial/VIA only) */}
+      {rgb && isQmk && (
         <List.Section title="RGB Lighting" subtitle={lightingType}>
           <List.Item
             icon={Icon.Sun}
@@ -216,6 +268,39 @@ function EditRgbForm({ rgb, onSaved }: { rgb: RgbValues; onSaved: (v: RgbValues)
       <Form.TextField id="speed" title="Speed" defaultValue={String(rgb.speed)} info="0–255" />
       <Form.TextField id="hue" title="Hue" defaultValue={String(rgb.hue)} info="0–255" />
       <Form.TextField id="saturation" title="Saturation" defaultValue={String(rgb.saturation)} info="0–255" />
+    </Form>
+  );
+}
+
+function RenameLayerForm({ board, layerIndex, currentName, onSaved }: {
+  board: BoardProfile;
+  layerIndex: number;
+  currentName: string;
+  onSaved: (newName: string) => void;
+}) {
+  const { pop } = useNavigation();
+
+  async function handleSubmit(values: { name: string }) {
+    const name = values.name.trim();
+    if (!name) {
+      showToast({ style: Toast.Style.Failure, title: "Name can't be empty" });
+      return;
+    }
+    onSaved(name);
+    showToast({ style: Toast.Style.Success, title: `Layer ${layerIndex} renamed to "${name}"` });
+    pop();
+  }
+
+  return (
+    <Form
+      navigationTitle={`Rename Layer ${layerIndex}`}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm title="Save" onSubmit={handleSubmit} />
+        </ActionPanel>
+      }
+    >
+      <Form.TextField id="name" title="Layer Name" defaultValue={currentName} />
     </Form>
   );
 }

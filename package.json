@@ -65,6 +65,14 @@
         }
       ],
       "keywords": ["layer", "peek", "quick"]
+    },
+    {
+      "name": "layer-indicator",
+      "title": "Layer Indicator",
+      "description": "Menu bar indicator showing your active keyboard layer",
+      "mode": "menu-bar",
+      "keywords": ["layer", "menu", "indicator", "status"],
+      "interval": "10m"
     }
   ],
   "dependencies": {

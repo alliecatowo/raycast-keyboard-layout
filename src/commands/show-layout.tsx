@@ -18,7 +18,7 @@ import {
   readKeymapHash,
   readVialKeyboard,
   readZmkKeyboard,
-} from "../lib/vial/client";
+} from "../lib/protocol";
 import { getFirmwareConfig } from "../lib/firmware/config";
 import AddBoardCommand from "./add-board";
 

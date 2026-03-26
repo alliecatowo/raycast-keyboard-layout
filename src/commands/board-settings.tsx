@@ -17,7 +17,7 @@ import {
   writeRgb,
   readLockStatus,
   readZmkLockStatus,
-} from "../lib/vial/client";
+} from "../lib/protocol";
 import { getActiveBoard } from "../lib/storage/active-board";
 import { updateBoard } from "../lib/storage/boards";
 import { BoardProfile } from "../lib/types";

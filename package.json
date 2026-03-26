@@ -74,6 +74,13 @@
       "keywords": ["layer", "peek", "quick"]
     },
     {
+      "name": "keypress-tester",
+      "title": "Keypress Tester",
+      "description": "Test which keys have been pressed on your keyboard",
+      "mode": "view",
+      "keywords": ["test", "keypress", "switch", "matrix"]
+    },
+    {
       "name": "layer-indicator",
       "title": "Layer Indicator",
       "description": "Menu bar indicator showing your active keyboard layer",

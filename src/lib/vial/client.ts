@@ -270,6 +270,16 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
   };
 }
 
+/** Read the switch matrix state (which keys are physically pressed) */
+export async function readMatrixState(): Promise<{ rows: number; cols: number; pressed: Array<{ row: number; col: number }> }> {
+  const result = (await runHelper(["matrix"])) as {
+    rows: number;
+    cols: number;
+    pressed: Array<{ row: number; col: number }>;
+  };
+  return result;
+}
+
 /** Read the full keymap and layout from a Vial keyboard */
 export async function readVialKeyboard(devicePath?: string): Promise<BoardProfile> {
   const args = ["read"];

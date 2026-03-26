@@ -38,8 +38,12 @@ const READ_TIMEOUT_MS = 1000;
 
 // VIA commands
 const CMD_VIA_GET_PROTOCOL_VERSION = 0x01;
+const CMD_VIA_GET_KEYBOARD_VALUE = 0x02;
 const CMD_VIA_GET_LAYER_COUNT = 0x11;
 const CMD_VIA_KEYMAP_GET_BUFFER = 0x12;
+
+// VIA keyboard value sub-commands
+const VIA_SWITCH_MATRIX_STATE = 0x03;
 
 // Vial commands (prefixed with 0xFE)
 const CMD_VIA_VIAL_PREFIX = 0xfe;
@@ -391,8 +395,55 @@ try {
     } finally {
       device.close();
     }
+  } else if (command === "matrix") {
+    // Read the switch matrix state — shows which keys are physically pressed
+    // Used for keypress testing and active layer detection
+    let device;
+    if (devicePath) {
+      device = new HID.HID(devicePath);
+    } else {
+      const devices = findVialDevices();
+      if (devices.length === 0) errorAndExit("No Vial keyboard detected.");
+      device = new HID.HID(devices[0].path);
+    }
+
+    try {
+      // Get matrix dimensions from definition
+      const definition = readDefinition(device);
+      const rows = definition.matrix?.rows || 0;
+      const cols = definition.matrix?.cols || 0;
+
+      if (!rows || !cols) errorAndExit("Invalid matrix dimensions");
+
+      // Read switch matrix state
+      const resp = sendAndReceive(device, CMD_VIA_GET_KEYBOARD_VALUE, VIA_SWITCH_MATRIX_STATE);
+
+      // Response contains a bitmask of pressed keys
+      // Each bit represents one key in the matrix (row-major order)
+      const pressed = [];
+      const bytesPerRow = Math.ceil(cols / 8);
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const byteIndex = 2 + row * bytesPerRow + Math.floor(col / 8);
+          const bitIndex = col % 8;
+          if (byteIndex < resp.length && (resp[byteIndex] & (1 << bitIndex)) !== 0) {
+            pressed.push({ row, col });
+          }
+        }
+      }
+
+      log(`Matrix state: ${pressed.length} key(s) pressed`);
+      output({
+        rows,
+        cols,
+        pressed,
+      });
+    } finally {
+      device.close();
+    }
   } else {
-    errorAndExit(`Unknown command: ${command}. Use "detect" or "read".`);
+    errorAndExit(`Unknown command: ${command}. Use "detect", "read", or "matrix".`);
   }
 } catch (err) {
   errorAndExit(err.message || String(err));

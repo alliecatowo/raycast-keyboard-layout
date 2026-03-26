@@ -27,6 +27,8 @@ declare namespace Preferences {
   export type DetectBoard = ExtensionPreferences & {}
   /** Preferences accessible in the `quick-layer` command */
   export type QuickLayer = ExtensionPreferences & {}
+  /** Preferences accessible in the `keypress-tester` command */
+  export type KeypressTester = ExtensionPreferences & {}
   /** Preferences accessible in the `layer-indicator` command */
   export type LayerIndicator = ExtensionPreferences & {}
 }
@@ -49,6 +51,8 @@ declare namespace Arguments {
   /** Layer number (0-9) */
   "layer": string
 }
+  /** Arguments passed to the `keypress-tester` command */
+  export type KeypressTester = {}
   /** Arguments passed to the `layer-indicator` command */
   export type LayerIndicator = {}
 }

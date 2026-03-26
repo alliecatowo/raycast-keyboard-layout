@@ -21,6 +21,7 @@ import { getActiveBoard } from "../lib/storage/active-board";
 import { updateBoard } from "../lib/storage/boards";
 import { BoardProfile } from "../lib/types";
 import { getFirmwareConfig } from "../lib/firmware/config";
+import { generateSvg } from "../lib/svg/renderer";
 
 interface QmkSetting {
   name: string;
@@ -172,10 +173,36 @@ export default function BoardSettingsCommand() {
               lockStatus.isLocked && lockStatus.unlockKeys.length > 0
                 ? [
                     {
-                      text: `Hold ${lockStatus.unlockKeys.length} key(s) to unlock`,
+                      tag: {
+                        value: `Hold ${lockStatus.unlockKeys.length} key(s) to unlock`,
+                        color: Color.Orange,
+                      },
                     },
                   ]
-                : []
+                : [
+                    {
+                      tag: {
+                        value: "Unlocked",
+                        color: Color.Green,
+                      },
+                    },
+                  ]
+            }
+            actions={
+              lockStatus.isLocked && lockStatus.unlockKeys.length > 0 ? (
+                <ActionPanel>
+                  <Action.Push
+                    title="Show Unlock Keys on Layout"
+                    icon={Icon.Key}
+                    target={
+                      <UnlockKeysView
+                        board={board}
+                        unlockKeys={lockStatus.unlockKeys}
+                      />
+                    }
+                  />
+                </ActionPanel>
+              ) : undefined
             }
           />
         )}
@@ -559,4 +586,45 @@ function RenameLayerForm({
       <Form.TextField id="name" title="Layer Name" defaultValue={currentName} />
     </Form>
   );
+}
+
+function UnlockKeysView({
+  board,
+  unlockKeys,
+}: {
+  board: BoardProfile;
+  unlockKeys: Array<{ row: number; col: number }>;
+}) {
+  // Map matrix positions to physical key indices for highlighting
+  // The Vial reader orders keycodes by physical position, and the
+  // unlock keys are matrix row,col pairs. We need to find which
+  // physical key indices correspond to those matrix positions.
+  // For now, highlight based on index matching (approximate).
+  const highlightIndices: number[] = [];
+
+  // Simple approach: unlock keys are matrix positions, and our physical
+  // layout was read from the board. The physical keys were reordered by
+  // the Vial reader to match physical order. We'd need the matrix mapping
+  // stored in the board profile for precise matching.
+  // For now, just note the positions in the description.
+  const keyPositions = unlockKeys
+    .map((k) => `Row ${k.row}, Col ${k.col}`)
+    .join(" + ");
+
+  let markdown = `### Hold these keys simultaneously to unlock:\n\n**${keyPositions}**\n\n`;
+
+  try {
+    const result = generateSvg(board.physicalLayout, {
+      appearance: "dark" as const,
+      layerIndex: 0,
+      layers: board.layers,
+      showGhostKeys: false,
+      highlightKeys: highlightIndices,
+    });
+    markdown += `![Layout](${result.filePath}?raycast-width=${result.width})`;
+  } catch {
+    // SVG render failed, just show text
+  }
+
+  return <Detail navigationTitle="Unlock Keys" markdown={markdown} />;
 }

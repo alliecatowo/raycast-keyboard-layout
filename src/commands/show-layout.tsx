@@ -86,20 +86,25 @@ export default function ShowLayoutCommand() {
 
   // Live keymap sync: poll for changes every 5s when board is connected
   useEffect(() => {
-    if (!board || board.firmware === "zmk") return; // Only Vial supports hash polling
+    if (!board) return;
     const fwConfig = getFirmwareConfig(board.firmware);
     if (!fwConfig.hasUsbKeymap) return;
 
     let lastHash = "";
     const interval = setInterval(async () => {
       try {
-        const { hash } = await readKeymapHash();
-        if (lastHash && hash !== lastHash) {
-          // Keymap changed — re-read the board
-          const updated = await readVialKeyboard();
-          setBoard(updated);
+        if (board.firmware === "zmk") {
+          // ZMK: use check_unsaved_changes
+          // For now, skip — needs port path stored in board profile
+        } else {
+          // Vial: use keymap hash
+          const { hash } = await readKeymapHash();
+          if (lastHash && hash !== lastHash) {
+            const updated = await readVialKeyboard();
+            setBoard(updated);
+          }
+          lastHash = hash;
         }
-        lastHash = hash;
       } catch {
         // Board disconnected — stop polling silently
       }

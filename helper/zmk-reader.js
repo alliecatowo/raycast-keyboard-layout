@@ -474,6 +474,28 @@ async function main() {
     } finally {
       port.close();
     }
+  } else if (command === "check-changes") {
+    // Check if there are unsaved keymap changes (for live sync detection)
+    if (!portPath) errorAndExit("Usage: zmk-reader.js check-changes <serial-port-path>");
+
+    const port = await openPort(portPath);
+    try {
+      const reqPayload = Request.encode(
+        Request.create({ keymap: { check_unsaved_changes: true } }),
+      ).finish();
+      const rawResp = await sendAndReceive(port, reqPayload);
+      const frames = frameDecode(rawResp);
+
+      let hasChanges = false;
+      if (frames.length > 0) {
+        const resp = Response.decode(frames[0]);
+        hasChanges = resp.keymap?.check_unsaved_changes === true;
+      }
+      log(`Unsaved changes: ${hasChanges}`);
+      output({ hasChanges });
+    } finally {
+      port.close();
+    }
   } else if (command === "set-layer-name") {
     // Usage: zmk-reader.js set-layer-name <port> <layer_id> <name>
     const layerId = parseInt(process.argv[4], 10);

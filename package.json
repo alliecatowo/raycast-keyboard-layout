@@ -67,6 +67,13 @@
       "keywords": ["github", "repo", "import", "remote", "zmk", "config"]
     },
     {
+      "name": "board-settings",
+      "title": "Board Settings",
+      "description": "Configure QMK settings, RGB, and tap-hold timing on your Vial keyboard",
+      "mode": "view",
+      "keywords": ["settings", "config", "rgb", "tapping", "vial", "qmk"]
+    },
+    {
       "name": "keypress-tester",
       "title": "Keypress Tester",
       "description": "Test which keys have been pressed on your keyboard",

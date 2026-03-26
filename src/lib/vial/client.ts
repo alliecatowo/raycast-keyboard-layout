@@ -270,6 +270,26 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
   };
 }
 
+/** Read all QMK settings + RGB from the board */
+export async function readBoardSettings(): Promise<{
+  vialProtocol: number;
+  lightingType: string;
+  settings: Record<number, { name: string; tab: string; qsid: number; value: number; unit?: string; type?: string; min?: number; max?: number }>;
+  rgb: { brightness: number; effect: number; speed: number; hue: number; saturation: number } | null;
+}> {
+  return (await runHelper(["settings"])) as never;
+}
+
+/** Write a single QMK setting */
+export async function writeBoardSetting(qsid: number, value: number): Promise<void> {
+  await runHelper(["set-setting", String(qsid), String(value)]);
+}
+
+/** Write RGB values */
+export async function writeRgb(brightness: number, effect: number, speed: number, hue: number, saturation: number): Promise<void> {
+  await runHelper(["set-rgb", String(brightness), String(effect), String(speed), String(hue), String(saturation)]);
+}
+
 /** Get a quick hash of the current keymap to detect changes */
 export async function readKeymapHash(): Promise<{ hash: string; layerCount: number }> {
   const result = (await runHelper(["keymap-hash"])) as { hash: string; layerCount: number; rows: number; cols: number };

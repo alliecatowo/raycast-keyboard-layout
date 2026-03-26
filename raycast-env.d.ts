@@ -30,6 +30,8 @@ declare namespace Preferences {
   export type QuickLayer = ExtensionPreferences & {}
   /** Preferences accessible in the `import-github` command */
   export type ImportGithub = ExtensionPreferences & {}
+  /** Preferences accessible in the `board-settings` command */
+  export type BoardSettings = ExtensionPreferences & {}
   /** Preferences accessible in the `keypress-tester` command */
   export type KeypressTester = ExtensionPreferences & {}
   /** Preferences accessible in the `layer-indicator` command */
@@ -52,6 +54,8 @@ declare namespace Arguments {
 }
   /** Arguments passed to the `import-github` command */
   export type ImportGithub = {}
+  /** Arguments passed to the `board-settings` command */
+  export type BoardSettings = {}
   /** Arguments passed to the `keypress-tester` command */
   export type KeypressTester = {}
   /** Arguments passed to the `layer-indicator` command */

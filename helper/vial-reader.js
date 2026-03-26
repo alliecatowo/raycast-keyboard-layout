@@ -39,6 +39,9 @@ const READ_TIMEOUT_MS = 1000;
 // VIA commands
 const CMD_VIA_GET_PROTOCOL_VERSION = 0x01;
 const CMD_VIA_GET_KEYBOARD_VALUE = 0x02;
+const CMD_VIA_LIGHTING_SET_VALUE = 0x07;
+const CMD_VIA_LIGHTING_GET_VALUE = 0x08;
+const CMD_VIA_LIGHTING_SAVE = 0x09;
 const CMD_VIA_GET_LAYER_COUNT = 0x11;
 const CMD_VIA_KEYMAP_GET_BUFFER = 0x12;
 
@@ -50,7 +53,49 @@ const CMD_VIA_VIAL_PREFIX = 0xfe;
 const CMD_VIAL_GET_KEYBOARD_ID = 0x00;
 const CMD_VIAL_GET_SIZE = 0x01;
 const CMD_VIAL_GET_DEFINITION = 0x02;
+const CMD_VIAL_GET_ENCODER = 0x03;
 const CMD_VIAL_GET_UNLOCK_STATUS = 0x05;
+const CMD_VIAL_QMK_SETTINGS_QUERY = 0x09;
+const CMD_VIAL_QMK_SETTINGS_GET = 0x0a;
+const CMD_VIAL_QMK_SETTINGS_SET = 0x0b;
+const CMD_VIAL_DYNAMIC_ENTRY_OP = 0x0d;
+
+// QMK Setting IDs (QSIDs)
+const QSID_NAMES = {
+  1: { name: "Grave Escape", tab: "Grave Escape" },
+  2: { name: "Combo Term", tab: "Combo", unit: "ms", min: 0, max: 10000 },
+  3: { name: "Auto Shift Flags", tab: "Auto Shift" },
+  4: { name: "Auto Shift Timeout", tab: "Auto Shift", unit: "ms", min: 0, max: 1000 },
+  5: { name: "One Shot Tap Count", tab: "One Shot", min: 0, max: 50 },
+  6: { name: "One Shot Timeout", tab: "One Shot", unit: "ms", min: 0, max: 60000 },
+  7: { name: "Tapping Term", tab: "Tap-Hold", unit: "ms", min: 0, max: 10000 },
+  8: { name: "Tap-Hold Flags (legacy)", tab: "Tap-Hold" },
+  9: { name: "Mouse Delay", tab: "Mouse Keys", unit: "ms" },
+  10: { name: "Mouse Interval", tab: "Mouse Keys", unit: "ms" },
+  11: { name: "Mouse Move Delta", tab: "Mouse Keys" },
+  12: { name: "Mouse Max Speed", tab: "Mouse Keys" },
+  13: { name: "Mouse Time to Max", tab: "Mouse Keys", unit: "ms" },
+  14: { name: "Mouse Wheel Delay", tab: "Mouse Keys", unit: "ms" },
+  15: { name: "Mouse Wheel Interval", tab: "Mouse Keys", unit: "ms" },
+  16: { name: "Mouse Wheel Max Speed", tab: "Mouse Keys" },
+  17: { name: "Mouse Wheel Time to Max", tab: "Mouse Keys", unit: "ms" },
+  18: { name: "Tap Code Delay", tab: "Tap-Hold", unit: "ms", min: 0, max: 1000 },
+  19: { name: "Tap Hold Caps Delay", tab: "Tap-Hold", unit: "ms", min: 0, max: 1000 },
+  20: { name: "Tapping Toggle Count", tab: "Tap-Hold", min: 0, max: 100 },
+  21: { name: "Magic Flags", tab: "Magic" },
+  22: { name: "Permissive Hold", tab: "Tap-Hold", type: "bool" },
+  23: { name: "Hold On Other Key Press", tab: "Tap-Hold", type: "bool" },
+  24: { name: "Retro Tapping", tab: "Tap-Hold", type: "bool" },
+  25: { name: "Quick Tap Term", tab: "Tap-Hold", unit: "ms", min: 0, max: 10000 },
+  26: { name: "Chordal Hold", tab: "Tap-Hold", type: "bool" },
+  27: { name: "Flow Tap Term", tab: "Tap-Hold", unit: "ms", min: 0, max: 10000 },
+};
+
+// RGB Light value IDs
+const RGB_BRIGHTNESS = 0x80;
+const RGB_EFFECT = 0x81;
+const RGB_EFFECT_SPEED = 0x82;
+const RGB_COLOR = 0x83;
 
 // ── HID Communication ────────────────────────────────────
 
@@ -393,6 +438,143 @@ try {
         })),
         layoutOptions: definition.layouts?.labels || [],
       });
+    } finally {
+      device.close();
+    }
+  } else if (command === "settings") {
+    // Read all QMK settings + RGB values
+    let device;
+    if (devicePath) {
+      device = new HID.HID(devicePath);
+    } else {
+      const devices = findVialDevices();
+      if (devices.length === 0) errorAndExit("No Vial keyboard detected.");
+      device = new HID.HID(devices[0].path);
+    }
+
+    try {
+      const { vialProtocol } = getVialKeyboardId(device);
+      const definition = readDefinition(device);
+      const lightingType = definition.lighting || "none";
+
+      // Query supported QSIDs (requires Vial protocol >= 4)
+      const settings = {};
+      if (vialProtocol >= 4) {
+        // Paginate through supported QSIDs
+        const supportedQsids = [];
+        let page = 0;
+        while (true) {
+          const resp = sendAndReceive(device, CMD_VIA_VIAL_PREFIX, CMD_VIAL_QMK_SETTINGS_QUERY, page);
+          let done = false;
+          for (let i = 0; i < resp.length - 1; i += 2) {
+            const qsid = resp[i] | (resp[i + 1] << 8);
+            if (qsid === 0xffff) { done = true; break; }
+            if (qsid !== 0) supportedQsids.push(qsid);
+          }
+          if (done) break;
+          page++;
+          if (page > 10) break; // safety
+        }
+
+        log(`Supported QSIDs: ${supportedQsids.join(", ")}`);
+
+        // Read each supported QSID
+        for (const qsid of supportedQsids) {
+          const resp = sendAndReceive(device, CMD_VIA_VIAL_PREFIX, CMD_VIAL_QMK_SETTINGS_GET, qsid & 0xff, (qsid >> 8) & 0xff);
+          // Value is a 4-byte little-endian integer starting at byte 0
+          const value = resp[0] | (resp[1] << 8) | (resp[2] << 16) | (resp[3] << 24);
+          const meta = QSID_NAMES[qsid] || { name: `Setting ${qsid}`, tab: "Other" };
+          settings[qsid] = { ...meta, qsid, value };
+        }
+      }
+
+      // Read RGB if supported
+      let rgb = null;
+      if (lightingType.includes("rgblight") || lightingType.includes("vialrgb")) {
+        try {
+          const brResp = sendAndReceive(device, CMD_VIA_LIGHTING_GET_VALUE, RGB_BRIGHTNESS);
+          const efResp = sendAndReceive(device, CMD_VIA_LIGHTING_GET_VALUE, RGB_EFFECT);
+          const spResp = sendAndReceive(device, CMD_VIA_LIGHTING_GET_VALUE, RGB_EFFECT_SPEED);
+          const clResp = sendAndReceive(device, CMD_VIA_LIGHTING_GET_VALUE, RGB_COLOR);
+          rgb = {
+            brightness: brResp[2],
+            effect: efResp[2],
+            speed: spResp[2],
+            hue: clResp[2],
+            saturation: clResp[3],
+          };
+          log(`RGB: brightness=${rgb.brightness}, effect=${rgb.effect}, speed=${rgb.speed}, hue=${rgb.hue}, sat=${rgb.saturation}`);
+        } catch (e) {
+          log(`RGB read failed: ${e.message}`);
+        }
+      }
+
+      // Read encoder count + bindings
+      let encoders = null;
+      if (definition.layouts?.keymap) {
+        // TODO: read encoder count from definition and fetch bindings
+      }
+
+      output({
+        vialProtocol,
+        lightingType,
+        settings,
+        rgb,
+        encoders,
+      });
+    } finally {
+      device.close();
+    }
+  } else if (command === "set-setting") {
+    // Write a single QMK setting: node vial-reader.js set-setting <qsid> <value> [devicePath]
+    const qsid = parseInt(process.argv[3], 10);
+    const value = parseInt(process.argv[4], 10);
+    const devPath = process.argv[5];
+
+    if (isNaN(qsid) || isNaN(value)) errorAndExit("Usage: set-setting <qsid> <value> [device-path]");
+
+    let device;
+    if (devPath) {
+      device = new HID.HID(devPath);
+    } else {
+      const devices = findVialDevices();
+      if (devices.length === 0) errorAndExit("No Vial keyboard detected.");
+      device = new HID.HID(devices[0].path);
+    }
+
+    try {
+      sendAndReceive(device,
+        CMD_VIA_VIAL_PREFIX, CMD_VIAL_QMK_SETTINGS_SET,
+        qsid & 0xff, (qsid >> 8) & 0xff,
+        value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >> 24) & 0xff
+      );
+      log(`Set QSID ${qsid} = ${value}`);
+      output({ ok: true, qsid, value });
+    } finally {
+      device.close();
+    }
+  } else if (command === "set-rgb") {
+    // Write RGB values: node vial-reader.js set-rgb <brightness> <effect> <speed> <hue> <saturation>
+    const brightness = parseInt(process.argv[3], 10);
+    const effect = parseInt(process.argv[4], 10);
+    const speed = parseInt(process.argv[5], 10);
+    const hue = parseInt(process.argv[6], 10);
+    const saturation = parseInt(process.argv[7], 10);
+
+    let device;
+    const devices = findVialDevices();
+    if (devices.length === 0) errorAndExit("No Vial keyboard detected.");
+    device = new HID.HID(devices[0].path);
+
+    try {
+      if (!isNaN(brightness)) sendAndReceive(device, CMD_VIA_LIGHTING_SET_VALUE, RGB_BRIGHTNESS, brightness);
+      if (!isNaN(effect)) sendAndReceive(device, CMD_VIA_LIGHTING_SET_VALUE, RGB_EFFECT, effect);
+      if (!isNaN(speed)) sendAndReceive(device, CMD_VIA_LIGHTING_SET_VALUE, RGB_EFFECT_SPEED, speed);
+      if (!isNaN(hue) && !isNaN(saturation)) sendAndReceive(device, CMD_VIA_LIGHTING_SET_VALUE, RGB_COLOR, hue, saturation);
+      // Persist to EEPROM
+      sendAndReceive(device, CMD_VIA_LIGHTING_SAVE);
+      log("RGB settings saved");
+      output({ ok: true });
     } finally {
       device.close();
     }

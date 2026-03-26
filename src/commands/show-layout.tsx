@@ -13,7 +13,11 @@ import { getBoards } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import { computeKeyColors, RgbState } from "../lib/svg/rgb-effects";
-import { readBoardSettings } from "../lib/vial/client";
+import {
+  readBoardSettings,
+  readKeymapHash,
+  readVialKeyboard,
+} from "../lib/vial/client";
 import { getFirmwareConfig } from "../lib/firmware/config";
 import AddBoardCommand from "./add-board";
 
@@ -79,6 +83,30 @@ export default function ShowLayoutCommand() {
     }
     load();
   }, []);
+
+  // Live keymap sync: poll for changes every 5s when board is connected
+  useEffect(() => {
+    if (!board || board.firmware === "zmk") return; // Only Vial supports hash polling
+    const fwConfig = getFirmwareConfig(board.firmware);
+    if (!fwConfig.hasUsbKeymap) return;
+
+    let lastHash = "";
+    const interval = setInterval(async () => {
+      try {
+        const { hash } = await readKeymapHash();
+        if (lastHash && hash !== lastHash) {
+          // Keymap changed — re-read the board
+          const updated = await readVialKeyboard();
+          setBoard(updated);
+        }
+        lastHash = hash;
+      } catch {
+        // Board disconnected — stop polling silently
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [board?.id]);
 
   if (noBoards && !isLoading) {
     return (

@@ -78,16 +78,29 @@ enum LockState {
 message KeymapRequest {
   oneof request_type {
     bool get_keymap = 1;
+    SetLayerPropsRequest set_layer_props = 3;
     bool get_physical_layouts = 4;
+    bool check_unsaved_changes = 7;
+    bool save_changes = 8;
   }
+}
+
+message SetLayerPropsRequest {
+  uint32 layer_id = 1;
+  string name = 2;
 }
 
 message KeymapResponse {
   oneof response_type {
     Keymap get_keymap = 1;
+    SetLayerPropsResponse set_layer_props = 3;
     PhysicalLayouts get_physical_layouts = 4;
+    bool check_unsaved_changes = 7;
+    bool save_changes = 8;
   }
 }
+
+message SetLayerPropsResponse {}
 
 message Keymap {
   repeated Layer layers = 1;
@@ -438,8 +451,63 @@ async function main() {
     } finally {
       port.close();
     }
+  } else if (command === "lock-status") {
+    if (!portPath) errorAndExit("Usage: zmk-reader.js lock-status <serial-port-path>");
+
+    const port = await openPort(portPath);
+    try {
+      const reqPayload = Request.encode(
+        Request.create({ core: { get_lock_state: true } }),
+      ).finish();
+      const rawResp = await sendAndReceive(port, reqPayload);
+      const frames = frameDecode(rawResp);
+
+      if (frames.length > 0) {
+        const resp = Response.decode(frames[0]);
+        const lockState = resp.core?.get_lock_state;
+        const isLocked = lockState === 0; // ZMK_STUDIO_CORE_LOCK_STATE_LOCKED = 0
+        log(`Lock state: ${isLocked ? "LOCKED" : "UNLOCKED"}`);
+        output({ isLocked, unlockInProgress: false, unlockKeys: [] });
+      } else {
+        output({ isLocked: false, unlockInProgress: false, unlockKeys: [] });
+      }
+    } finally {
+      port.close();
+    }
+  } else if (command === "set-layer-name") {
+    // Usage: zmk-reader.js set-layer-name <port> <layer_id> <name>
+    const layerId = parseInt(process.argv[4], 10);
+    const newName = process.argv[5];
+    if (!portPath || isNaN(layerId) || !newName) {
+      errorAndExit("Usage: zmk-reader.js set-layer-name <port> <layer_id> <name>");
+    }
+
+    const port = await openPort(portPath);
+    try {
+      // Set layer name
+      let reqPayload = Request.encode(
+        Request.create({
+          keymap: { set_layer_props: { layer_id: layerId, name: newName } },
+        }),
+      ).finish();
+      let rawResp = await sendAndReceive(port, reqPayload);
+      let frames = frameDecode(rawResp);
+      log(`Set layer ${layerId} name to "${newName}"`);
+
+      // Save changes to persist
+      reqPayload = Request.encode(
+        Request.create({ keymap: { save_changes: true } }),
+      ).finish();
+      rawResp = await sendAndReceive(port, reqPayload);
+      frames = frameDecode(rawResp);
+      log("Changes saved");
+
+      output({ ok: true, layerId, name: newName });
+    } finally {
+      port.close();
+    }
   } else {
-    errorAndExit(`Unknown command: ${command}. Use "detect" or "read".`);
+    errorAndExit(`Unknown command: ${command}. Use "detect", "read", "lock-status", or "set-layer-name".`);
   }
 }
 

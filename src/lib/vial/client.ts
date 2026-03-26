@@ -403,6 +403,86 @@ export async function readMatrixState(): Promise<{
   return result;
 }
 
+/** Read lock status from a ZMK board */
+export async function readZmkLockStatus(portPath: string): Promise<{
+  isLocked: boolean;
+  unlockInProgress: boolean;
+  unlockKeys: Array<{ row: number; col: number }>;
+}> {
+  const zmkHelperPath = getHelperPath().replace(
+    "vial-reader.js",
+    "zmk-reader.js",
+  );
+  const nodePath = findNodeBinary();
+
+  return new Promise((resolve, reject) => {
+    execFile(
+      nodePath,
+      [zmkHelperPath, "lock-status", portPath],
+      {
+        timeout: 10000,
+        env: {
+          ...process.env,
+          NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stderr) console.log("[zmk-helper]", stderr.trim());
+        if (error) {
+          reject(new Error(stderr || error.message));
+          return;
+        }
+        try {
+          resolve(JSON.parse(stdout));
+        } catch {
+          reject(new Error("Parse error"));
+        }
+      },
+    );
+  });
+}
+
+/** Write a layer name to a ZMK board (persists to firmware) */
+export async function writeZmkLayerName(
+  portPath: string,
+  layerId: number,
+  name: string,
+): Promise<void> {
+  const zmkHelperPath = getHelperPath().replace(
+    "vial-reader.js",
+    "zmk-reader.js",
+  );
+  const nodePath = findNodeBinary();
+
+  return new Promise((resolve, reject) => {
+    execFile(
+      nodePath,
+      [zmkHelperPath, "set-layer-name", portPath, String(layerId), name],
+      {
+        timeout: 10000,
+        env: {
+          ...process.env,
+          NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stderr) console.log("[zmk-helper]", stderr.trim());
+        if (error) {
+          reject(new Error(stderr || error.message));
+          return;
+        }
+        try {
+          const result = JSON.parse(stdout);
+          if (result.error) reject(new Error(result.error));
+          else resolve();
+        } catch {
+          reject(new Error("Parse error"));
+        }
+      },
+    );
+  });
+}
+
 /** Read the full keymap and layout from a Vial keyboard */
 export async function readVialKeyboard(
   devicePath?: string,

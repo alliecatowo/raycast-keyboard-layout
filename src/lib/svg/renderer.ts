@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as crypto from "crypto";
 import { PhysicalKey, RenderOptions, SvgResult } from "../types";
 import { parseKeycode } from "../keymap/keycodes";
 import { resolveEffectiveKey } from "../keymap/layer-resolver";
@@ -13,16 +14,49 @@ import {
 } from "./geometry";
 import { renderKey } from "./key-renderer";
 
+const TMP_DIR = path.join("/tmp", "keyviz");
+
+/** In-memory cache: hash → SvgResult */
+const svgCache = new Map<string, SvgResult>();
+
+/** Compute a hash of the render inputs to detect changes */
+function computeRenderHash(physicalLayout: PhysicalKey[], options: RenderOptions): string {
+  const data = JSON.stringify({
+    layout: physicalLayout,
+    layerIndex: options.layerIndex,
+    keycodes: options.layers[options.layerIndex]?.keycodes,
+    appearance: options.appearance,
+    highlightKeys: options.highlightKeys,
+    showGhostKeys: options.showGhostKeys,
+    // Include ghost-source layers (all layers below current for ghost resolution)
+    ghostLayers: options.showGhostKeys
+      ? options.layers.slice(0, options.layerIndex).map((l) => l.keycodes)
+      : undefined,
+  });
+  return crypto.createHash("md5").update(data).digest("hex").slice(0, 12);
+}
+
 /** Escape XML special characters */
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/** Generate an SVG visualization of a keyboard layer */
+/**
+ * Generate an SVG visualization of a keyboard layer.
+ * Returns cached result if inputs haven't changed.
+ */
 export function generateSvg(
   physicalLayout: PhysicalKey[],
   options: RenderOptions,
 ): SvgResult {
+  const hash = computeRenderHash(physicalLayout, options);
+
+  // Check in-memory cache
+  const cached = svgCache.get(hash);
+  if (cached && fs.existsSync(cached.filePath)) {
+    return cached;
+  }
+
   const palette = getPalette(options.appearance);
   const layer = options.layers[options.layerIndex];
   if (!layer) {
@@ -109,15 +143,23 @@ export function generateSvg(
 
   const svg = lines.join("\n");
 
-  // Write SVG to a temp path with no spaces (spaces break markdown image syntax)
-  const tmpDir = path.join("/tmp", "keyviz");
-  if (!fs.existsSync(tmpDir)) {
-    fs.mkdirSync(tmpDir, { recursive: true });
+  // Write SVG to a temp path (no spaces — breaks markdown image syntax)
+  if (!fs.existsSync(TMP_DIR)) {
+    fs.mkdirSync(TMP_DIR, { recursive: true });
   }
 
-  const fileName = `layout-layer-${options.layerIndex}.svg`;
-  const filePath = path.join(tmpDir, fileName);
+  // Use hash in filename so different renders don't collide
+  const fileName = `layout-${hash}.svg`;
+  const filePath = path.join(TMP_DIR, fileName);
   fs.writeFileSync(filePath, svg, "utf-8");
 
-  return { svg, filePath, width: totalWidth, height: totalHeight };
+  const result: SvgResult = { svg, filePath, width: totalWidth, height: totalHeight };
+  svgCache.set(hash, result);
+
+  return result;
+}
+
+/** Clear the SVG cache (call when board data changes) */
+export function clearSvgCache(): void {
+  svgCache.clear();
 }

@@ -20,6 +20,7 @@ import {
 import { getActiveBoard } from "../lib/storage/active-board";
 import { updateBoard } from "../lib/storage/boards";
 import { BoardProfile } from "../lib/types";
+import { getFirmwareConfig } from "../lib/firmware/config";
 
 interface QmkSetting {
   name: string;
@@ -88,11 +89,9 @@ export default function BoardSettingsCommand() {
         }
         setBoard(activeBoard);
 
-        const isVialCapable =
-          activeBoard.firmware === "qmk" || activeBoard.firmware === "vial";
-        const isViaCapable = isVialCapable || activeBoard.firmware === "via";
+        const fwConfig = getFirmwareConfig(activeBoard.firmware);
 
-        if (isViaCapable) {
+        if (fwConfig.hasUsbSettings || fwConfig.hasRgbControl) {
           try {
             const data = await readBoardSettings();
             setSettings(data.settings);
@@ -100,8 +99,8 @@ export default function BoardSettingsCommand() {
             setLightingType(data.lightingType);
             setIsConnected(true);
 
-            // Try lock status (Vial only)
-            if (isVialCapable) {
+            // Try lock status
+            if (fwConfig.hasLockDetection) {
               try {
                 const lock = await readLockStatus();
                 setLockStatus(lock);
@@ -139,20 +138,7 @@ export default function BoardSettingsCommand() {
     tabs.set(s.tab, list);
   }
 
-  function firmwareLabel(): string {
-    switch (board!.firmware) {
-      case "vial":
-        return "Vial (QMK)";
-      case "via":
-        return "VIA (QMK)";
-      case "qmk":
-        return "QMK (Vial)";
-      case "zmk":
-        return "ZMK";
-      default:
-        return board!.firmware.toUpperCase();
-    }
-  }
+  const fwDisplay = getFirmwareConfig(board.firmware);
 
   return (
     <List isLoading={isLoading} navigationTitle={`${board.name} — Settings`}>
@@ -168,7 +154,7 @@ export default function BoardSettingsCommand() {
           accessories={[
             {
               tag: {
-                value: firmwareLabel(),
+                value: fwDisplay.displayName,
                 color: isConnected ? Color.Green : Color.SecondaryText,
               },
             },

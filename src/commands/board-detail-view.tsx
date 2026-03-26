@@ -2,6 +2,7 @@ import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
 import { useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { generateSvg } from "../lib/svg/renderer";
+import { getFirmwareConfig } from "../lib/firmware/config";
 import ImportKeymapCommand from "./import-keymap";
 
 export default function BoardDetailView({ board }: { board: BoardProfile }) {
@@ -104,9 +105,9 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
                 }
               })()}
             />
-            <Action.Open
-              title="Open Vial"
-              target="vial"
+            <Action.OpenInBrowser
+              title={getFirmwareConfig(board.firmware).configuratorLabel}
+              url={getFirmwareConfig(board.firmware).configuratorUrl}
               shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
             />
           </ActionPanel.Section>

@@ -6,6 +6,7 @@ import { getBoards } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import { readMatrixState } from "../lib/vial/client";
 import { getLayerKeys } from "../lib/layer-detect";
+import { getFirmwareConfig } from "../lib/firmware/config";
 
 export default function LayerIndicatorCommand() {
   const [board, setBoard] = useState<BoardProfile>();
@@ -159,8 +160,10 @@ export default function LayerIndicatorCommand() {
           }
         />
         <MenuBarExtra.Item
-          title="Open Vial"
-          onAction={() => open("vial://", "com.vial.vial")}
+          title={getFirmwareConfig(board.firmware).configuratorLabel}
+          onAction={() =>
+            open(getFirmwareConfig(board.firmware).configuratorUrl)
+          }
         />
       </MenuBarExtra.Section>
     </MenuBarExtra>

@@ -18,6 +18,7 @@ import {
   setActiveBoardId,
 } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
+import { getFirmwareConfig } from "../lib/firmware/config";
 import ImportKeymapCommand from "./import-keymap";
 import BoardDetailView from "./board-detail-view";
 
@@ -133,9 +134,9 @@ export default function ManageBoardsCommand() {
                     target={<ImportKeymapCommand />}
                     shortcut={{ modifiers: ["cmd"], key: "n" }}
                   />
-                  <Action.Open
-                    title="Open Vial"
-                    target="vial"
+                  <Action.OpenInBrowser
+                    title={getFirmwareConfig(board.firmware).configuratorLabel}
+                    url={getFirmwareConfig(board.firmware).configuratorUrl}
                     shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
                   />
                   <Action

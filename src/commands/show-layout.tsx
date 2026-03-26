@@ -14,6 +14,7 @@ import { setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import { computeKeyColors, RgbState } from "../lib/svg/rgb-effects";
 import { readBoardSettings } from "../lib/vial/client";
+import { getFirmwareConfig } from "../lib/firmware/config";
 import AddBoardCommand from "./add-board";
 
 interface Preferences {
@@ -52,8 +53,9 @@ export default function ShowLayoutCommand() {
         }
         setBoard(active);
 
-        // Try to read RGB state if board is QMK/Vial
-        if (active.firmware === "qmk" || active.firmware === "vial") {
+        // Try to read RGB state if board supports it
+        const fwConfig = getFirmwareConfig(active.firmware);
+        if (fwConfig.hasRgbControl) {
           try {
             const data = await readBoardSettings();
             if (data.rgb) {
@@ -307,9 +309,9 @@ export default function ShowLayoutCommand() {
               })()}
               shortcut={{ modifiers: ["cmd", "shift"], key: "o" }}
             />
-            <Action.Open
-              title="Open Vial"
-              target="vial"
+            <Action.OpenInBrowser
+              title={getFirmwareConfig(board.firmware).configuratorLabel}
+              url={getFirmwareConfig(board.firmware).configuratorUrl}
               shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
             />
           </ActionPanel.Section>

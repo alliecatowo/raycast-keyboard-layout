@@ -16,7 +16,7 @@ export default function ShowLayoutCommand() {
   const [board, setBoard] = useState<BoardProfile | undefined>();
   const [allBoards, setAllBoards] = useState<BoardProfile[]>([]);
   const [currentLayer, setCurrentLayer] = useState(0);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [splitView, setSplitView] = useState<"both" | "left" | "right">(
     (getPreferenceValues<Preferences>().defaultView as "both" | "left" | "right") || "both",
   );

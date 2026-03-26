@@ -1,10 +1,11 @@
+/**
+ * ZMK adapter using serial + BLE transports.
+ * Serial: POSIX stty + fs (no native modules)
+ * BLE: koffi → SimpleBLE (prebuilt, same pattern as HIDAPI)
+ */
+
 import { BoardProfile } from "../types";
-import {
-  detectZmkDevices,
-  readZmkKeyboard,
-  readZmkLockStatus,
-  writeZmkLayerName,
-} from "../vial/client";
+import { zmkSerialTransport, zmkBleTransport } from "../transport";
 import { DetectedDevice, FirmwareAdapter } from "./adapter";
 
 export class ZmkAdapter implements FirmwareAdapter {
@@ -12,28 +13,58 @@ export class ZmkAdapter implements FirmwareAdapter {
   readonly displayName = "ZMK Studio";
 
   async detectDevices(): Promise<DetectedDevice[]> {
-    const devices = await detectZmkDevices();
-    return devices.map((d) => ({
-      path: d.path,
-      name: d.product || "ZMK Keyboard",
-      manufacturer: d.manufacturer || "Unknown",
-      firmware: "zmk" as const,
-      vendorId: String(d.vendorId),
-      productId: String(d.productId),
-      serialNumber: d.serialNumber,
-      transport: "serial" as const,
-    }));
+    // Try both USB serial and BLE in parallel
+    const [serialDevices, bleDevices] = await Promise.allSettled([
+      zmkSerialTransport.discover(),
+      zmkBleTransport.discover().catch(() => []),
+    ]);
+
+    const devices: DetectedDevice[] = [];
+
+    if (serialDevices.status === "fulfilled") {
+      devices.push(
+        ...serialDevices.value.map((d) => ({
+          path: d.path,
+          name: d.name,
+          manufacturer: "ZMK",
+          firmware: "zmk" as const,
+          vendorId: "",
+          productId: "",
+          transport: "serial" as const,
+        })),
+      );
+    }
+
+    if (bleDevices.status === "fulfilled") {
+      devices.push(
+        ...bleDevices.value.map((d) => ({
+          path: d.path,
+          name: d.name,
+          manufacturer: "ZMK (BLE)",
+          firmware: "zmk" as const,
+          vendorId: "",
+          productId: "",
+          transport: "serial" as const, // TODO: change to "ble" when BLE connect works
+        })),
+      );
+    }
+
+    return devices;
   }
 
   async readBoard(device: DetectedDevice): Promise<BoardProfile> {
-    return readZmkKeyboard(device.path);
-  }
-
-  async getLockStatus(portPath: string) {
-    return readZmkLockStatus(portPath);
-  }
-
-  async setLayerName(portPath: string, layerId: number, name: string) {
-    return writeZmkLayerName(portPath, layerId, name);
+    const conn = zmkSerialTransport.connect({
+      ...device,
+      transportType: device.transport === "serial" ? "serial" : "ble",
+    });
+    try {
+      // Verify connectivity by sending getDeviceInfo
+      conn.sendAndReceive([0x01]); // placeholder — needs protobuf encoding
+      throw new Error(
+        "Full ZMK board read coming soon. Device detected at: " + device.path,
+      );
+    } finally {
+      conn.close();
+    }
   }
 }

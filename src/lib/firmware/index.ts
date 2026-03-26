@@ -3,16 +3,16 @@ import {
   detectAllDevicesViaAdapters,
   getAdapters,
 } from "./adapter";
-import { KoffiVialAdapter } from "./koffi-vial-adapter";
-import { NativeZmkAdapter } from "./native-zmk-adapter";
+import { VialAdapter } from "./vial-adapter";
+import { ZmkAdapter } from "./zmk-adapter";
 
 export type { DetectedDevice, FirmwareAdapter } from "./adapter";
-export { KoffiVialAdapter } from "./koffi-vial-adapter";
-export { NativeZmkAdapter } from "./native-zmk-adapter";
+export { VialAdapter } from "./vial-adapter";
+export { ZmkAdapter } from "./zmk-adapter";
 
-// Register all adapters — in-process, no child_process needed
-registerAdapter(new KoffiVialAdapter());
-registerAdapter(new NativeZmkAdapter());
+// Register adapters — both use the koffi-based transport layer
+registerAdapter(new VialAdapter());
+registerAdapter(new ZmkAdapter());
 
 /** Detect all connected keyboards across all firmware types */
 export const detectAll = detectAllDevicesViaAdapters;

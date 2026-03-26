@@ -175,17 +175,24 @@ const SHIFTED_SYMBOLS: Record<number, string> = {
   0x38: "KC_QUES",   // ?
 };
 
-// Modifier bits for mod-tap and layer-tap
-const MOD_BITS: Record<number, string> = {
-  0x01: "MOD_LCTL",
-  0x02: "MOD_LSFT",
-  0x04: "MOD_LALT",
-  0x08: "MOD_LGUI",
-  0x11: "MOD_RCTL",
-  0x12: "MOD_RSFT",
-  0x14: "MOD_RALT",
-  0x18: "MOD_RGUI",
-};
+/** Decode modifier bitmask to human-readable string */
+function decodeMods(mods: number): string {
+  const EXACT: Record<number, string> = {
+    0x01: "Ctrl", 0x02: "Shift", 0x04: "Alt", 0x08: "Cmd",
+    0x11: "RCtrl", 0x12: "RShift", 0x14: "RAlt", 0x18: "RCmd",
+    0x0f: "Hyper", 0x07: "Meh",
+  };
+  if (EXACT[mods]) return EXACT[mods];
+
+  const parts: string[] = [];
+  const isRight = (mods & 0x10) !== 0;
+  const baseMods = mods & 0x0f;
+  if (baseMods & 0x08) parts.push(isRight ? "RCmd" : "Cmd");
+  if (baseMods & 0x04) parts.push(isRight ? "RAlt" : "Alt");
+  if (baseMods & 0x02) parts.push(isRight ? "RShift" : "Shift");
+  if (baseMods & 0x01) parts.push(isRight ? "RCtrl" : "Ctrl");
+  return parts.join("+") || `Mod(${mods})`;
+}
 
 /**
  * Convert a QMK numeric keycode to its string representation.
@@ -227,8 +234,7 @@ export function numericKeycodeToString(keycode: number): string {
     }
 
     const basicStr = BASIC_KEYCODES[basic] ?? `0x${basic.toString(16)}`;
-    const modStr = MOD_BITS[mods] ?? `MOD(0x${mods.toString(16)})`;
-    return `${modStr}(${basicStr})`;
+    return `${decodeMods(mods)}(${basicStr})`;
   }
 
   // Layer-Tap: LT(layer, kc) — 0x4000–0x4FFF
@@ -244,31 +250,42 @@ export function numericKeycodeToString(keycode: number): string {
     return `MO(${keycode & 0xff})`;
   }
 
-  // TG(layer) — 0x5300–0x53FF
-  if (keycode >= 0x5300 && keycode <= 0x53ff) {
-    return `TG(${keycode & 0xff})`;
-  }
-
-  // OSL(layer) — 0x5400–0x54FF
+  // TG(layer) — 0x5400–0x54FF
   if (keycode >= 0x5400 && keycode <= 0x54ff) {
-    return `OSL(${keycode & 0xff})`;
+    return `TG(${keycode & 0x1f})`;
   }
 
-  // TO(layer) — 0x5500–0x55FF
+  // OSL(layer) — 0x5500–0x55FF
   if (keycode >= 0x5500 && keycode <= 0x55ff) {
-    return `TO(${keycode & 0xff})`;
+    return `OSL(${keycode & 0x1f})`;
+  }
+
+  // TO(layer) — 0x5600–0x56FF
+  if (keycode >= 0x5600 && keycode <= 0x56ff) {
+    return `TO(${keycode & 0x1f})`;
   }
 
   // OSM(mod) — 0x5C00–0x5CFF
   if (keycode >= 0x5c00 && keycode <= 0x5cff) {
-    const mod = keycode & 0xff;
-    const modStr = MOD_BITS[mod] ?? `MOD(0x${mod.toString(16)})`;
-    return `OSM(${modStr})`;
+    return `OSM(${decodeMods(keycode & 0x1f)})`;
   }
 
-  // DF(layer) — 0x5200–0x52FF
-  if (keycode >= 0x5200 && keycode <= 0x52ff) {
-    return `DF(${keycode & 0xff})`;
+  // DF(layer) — 0x5300–0x53FF (moved in modern QMK)
+  if (keycode >= 0x5300 && keycode <= 0x53ff) {
+    return `DF(${keycode & 0x1f})`;
+  }
+
+  // MO(layer) in newer QMK/Vial — 0x5220–0x523F
+  if (keycode >= 0x5220 && keycode <= 0x523f) {
+    return `MO(${keycode & 0x1f})`;
+  }
+
+  // TT(layer) — Layer Tap Toggle — 0x5240–0x525F (or legacy 0x5200–0x521F)
+  if (keycode >= 0x5200 && keycode <= 0x521f) {
+    return `TT(${keycode & 0x1f})`;
+  }
+  if (keycode >= 0x5240 && keycode <= 0x525f) {
+    return `TT(${keycode & 0x1f})`;
   }
 
   // Mod-Tap: MT(mod, kc) — 0x6000–0x7BFF (stops before system keycodes)
@@ -276,8 +293,7 @@ export function numericKeycodeToString(keycode: number): string {
     const mods = (keycode >> 8) & 0x1f;
     const basic = keycode & 0xff;
     const basicStr = BASIC_KEYCODES[basic] ?? `0x${basic.toString(16)}`;
-    const modStr = MOD_BITS[mods] ?? `MOD(0x${mods.toString(16)})`;
-    return `MT(${modStr}, ${basicStr})`;
+    return `MT(${decodeMods(mods)}, ${basicStr})`;
   }
 
   // System keycodes 0x7C00+
@@ -304,6 +320,12 @@ export function numericKeycodeToString(keycode: number): string {
     0x7e0a: "RGB_SPD",
   };
   if (RGB_KEYCODES[keycode]) return RGB_KEYCODES[keycode];
+
+  // User keycodes — 0x7E40–0x7FFF (QK_USER range)
+  if (keycode >= 0x7e40 && keycode <= 0x7fff) {
+    const userIndex = keycode - 0x7e40;
+    return `USER_${userIndex}`;
+  }
 
   // Fallback: hex representation
   return `0x${keycode.toString(16).toUpperCase().padStart(4, "0")}`;

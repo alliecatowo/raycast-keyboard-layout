@@ -183,6 +183,28 @@ export function parseKeycode(raw: string): ParsedKeycode {
     return { label: `DF(${dfMatch[1]})`, category: "layer", raw: trimmed };
   }
 
+  // Tap-toggle layer: TT(n)
+  const ttMatch = trimmed.match(/^TT\((\d+)\)$/);
+  if (ttMatch) {
+    return { label: `TT(${ttMatch[1]})`, holdLabel: `L${ttMatch[1]}`, category: "layer", raw: trimmed };
+  }
+
+  // User keycodes: USER_0, USER_1, etc.
+  const userMatch = trimmed.match(/^USER_(\d+)$/);
+  if (userMatch) {
+    return { label: `User ${userMatch[1]}`, category: "macro", raw: trimmed };
+  }
+
+  // Decoded mod+key: Shift(KC_1), Ctrl+Alt(KC_DEL), etc.
+  const decodedModMatch = trimmed.match(/^([A-Za-z+]+)\(([^)]+)\)$/);
+  if (decodedModMatch && !trimmed.startsWith("MT(") && !trimmed.startsWith("LT(") && !trimmed.startsWith("MO(") && !trimmed.startsWith("OSM(") && !trimmed.startsWith("MOD_")) {
+    const modName = decodedModMatch[1];
+    const innerKc = lookupKeycode(decodedModMatch[2]);
+    if (innerKc) {
+      return { label: innerKc.label, holdLabel: modName, category: "modifier", raw: trimmed };
+    }
+  }
+
   // One-shot mod: OSM(mod)
   const osmMatch = trimmed.match(OSM_RE);
   if (osmMatch) {

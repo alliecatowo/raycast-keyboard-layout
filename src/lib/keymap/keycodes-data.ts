@@ -84,10 +84,10 @@ const raw: RawEntry[] = [
   ["KC_MEH", "Meh", "modifier", "Ctrl+Shift+Alt"],
 
   // ── Navigation ─────────────────────────────────────────
-  ["KC_UP", "\u2191", "navigation", "Up", "Up Arrow"],
-  ["KC_DOWN", "\u2193", "navigation", "Down", "Down Arrow"],
-  ["KC_LEFT", "\u2190", "navigation", "Left", "Left Arrow"],
-  ["KC_RGHT", "\u2192", "navigation", "Right", "Right Arrow", "KC_RIGHT"],
+  ["KC_UP", "Up", "navigation", "Up Arrow", "\u2191"],
+  ["KC_DOWN", "Down", "navigation", "Down Arrow", "\u2193"],
+  ["KC_LEFT", "Left", "navigation", "Left Arrow", "\u2190"],
+  ["KC_RGHT", "Right", "navigation", "Right Arrow", "KC_RIGHT", "\u2192"],
   ["KC_HOME", "Home", "navigation"],
   ["KC_END", "End", "navigation"],
   ["KC_PGUP", "PgUp", "navigation", "Page Up"],
@@ -209,8 +209,8 @@ const raw: RawEntry[] = [
   ["EE_CLR", "EEClr", "system", "EEPROM Clear"],
 
   // ── Transparent / None ─────────────────────────────────
-  ["KC_TRNS", "\u25BD", "transparent", "Trans", "Transparent", "_______"],
-  ["KC_NO", "\u2205", "none", "No", "Nothing", "XXXXXXX"],
+  ["KC_TRNS", "Trans", "transparent", "Transparent", "_______"],
+  ["KC_NO", "", "none", "No", "Nothing", "XXXXXXX"],
 ];
 
 /** All known keycodes as KeycodeDefinition objects */

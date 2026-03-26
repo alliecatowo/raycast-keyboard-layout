@@ -5,6 +5,7 @@ import { saveBoard } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import BoardDetailView from "./board-detail-view";
 import ImportKeymapCommand from "./import-keymap";
+import ImportGitHubCommand from "./import-github";
 
 interface DetectedDevice {
   path: string;
@@ -108,6 +109,16 @@ export default function AddBoardCommand() {
           actions={
             <ActionPanel>
               <Action.Push title="Import File" icon={Icon.Document} target={<ImportKeymapCommand />} />
+            </ActionPanel>
+          }
+        />
+        <List.Item
+          icon={Icon.Globe}
+          title="Import from GitHub"
+          subtitle="Browse a public repo for your keymap"
+          actions={
+            <ActionPanel>
+              <Action.Push title="Import from GitHub" icon={Icon.Globe} target={<ImportGitHubCommand />} />
             </ActionPanel>
           }
         />

@@ -74,6 +74,13 @@
       "keywords": ["layer", "peek", "quick"]
     },
     {
+      "name": "import-github",
+      "title": "Import from GitHub",
+      "description": "Browse a public GitHub repo and import a keymap file",
+      "mode": "view",
+      "keywords": ["github", "repo", "import", "remote", "zmk", "config"]
+    },
+    {
       "name": "keypress-tester",
       "title": "Keypress Tester",
       "description": "Test which keys have been pressed on your keyboard",

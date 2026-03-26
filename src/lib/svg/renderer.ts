@@ -4,7 +4,7 @@ import * as crypto from "crypto";
 import { PhysicalKey, RenderOptions, SvgResult } from "../types";
 import { parseKeycode } from "../keymap/keycodes";
 import { resolveEffectiveKey } from "../keymap/layer-resolver";
-import { getPalette } from "./colors";
+import { getPalette, ThemeId } from "./colors";
 import {
   computeBoundingBox,
   detectSplitPoint,
@@ -57,14 +57,35 @@ export function generateSvg(
     return cached;
   }
 
-  const palette = getPalette(options.appearance);
+  const themeId = (options.theme ?? "auto") as ThemeId;
+  const palette = getPalette(options.appearance, themeId);
   const layer = options.layers[options.layerIndex];
   if (!layer) {
     throw new Error(`Layer ${options.layerIndex} not found`);
   }
 
-  const splitX = detectSplitPoint(physicalLayout);
-  const bbox = computeBoundingBox(physicalLayout, splitX);
+  // Filter keys for split view (left half, right half, or both)
+  const splitView = options.splitView ?? "both";
+  const rawSplitX = detectSplitPoint(physicalLayout);
+
+  let renderLayout = physicalLayout;
+  let renderKeycodes = layer.keycodes;
+  let renderSplitX = rawSplitX;
+
+  if (rawSplitX !== null && splitView !== "both") {
+    const indices: number[] = [];
+    for (let i = 0; i < physicalLayout.length; i++) {
+      const isRight = physicalLayout[i].x >= rawSplitX;
+      if ((splitView === "left" && !isRight) || (splitView === "right" && isRight)) {
+        indices.push(i);
+      }
+    }
+    renderLayout = indices.map((i) => physicalLayout[i]);
+    renderKeycodes = indices.map((i) => layer.keycodes[i] ?? "KC_NO");
+    renderSplitX = null; // No split gap when showing one half
+  }
+
+  const bbox = computeBoundingBox(renderLayout, renderSplitX);
 
   const totalWidth = bbox.width + SVG_PADDING * 2;
   const totalHeight = bbox.height + SVG_PADDING * 2 + HEADER_HEIGHT;
@@ -97,9 +118,9 @@ export function generateSvg(
   // Keys
   const keysOffsetY = HEADER_HEIGHT;
 
-  for (let i = 0; i < physicalLayout.length; i++) {
-    const physKey = physicalLayout[i];
-    const rawKeycode = layer.keycodes[i] ?? "KC_NO";
+  for (let i = 0; i < renderLayout.length; i++) {
+    const physKey = renderLayout[i];
+    const rawKeycode = renderKeycodes[i] ?? "KC_NO";
 
     const isTransparent =
       rawKeycode === "KC_TRNS" || rawKeycode === "_______" || rawKeycode === "KC_TRANSPARENT";
@@ -116,7 +137,7 @@ export function generateSvg(
       }
     }
 
-    const pos = keyToPixels(physKey, bbox.minX, bbox.minY, splitX);
+    const pos = keyToPixels(physKey, bbox.minX, bbox.minY, renderSplitX);
 
     lines.push(
       renderKey({

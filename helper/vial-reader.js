@@ -50,6 +50,7 @@ const CMD_VIA_VIAL_PREFIX = 0xfe;
 const CMD_VIAL_GET_KEYBOARD_ID = 0x00;
 const CMD_VIAL_GET_SIZE = 0x01;
 const CMD_VIAL_GET_DEFINITION = 0x02;
+const CMD_VIAL_GET_UNLOCK_STATUS = 0x05;
 
 // ── HID Communication ────────────────────────────────────
 
@@ -391,6 +392,91 @@ try {
           ry: k.ry,
         })),
         layoutOptions: definition.layouts?.labels || [],
+      });
+    } finally {
+      device.close();
+    }
+  } else if (command === "keymap-hash") {
+    // Quick hash of the keymap to detect changes without full read
+    let device;
+    if (devicePath) {
+      device = new HID.HID(devicePath);
+    } else {
+      const devices = findVialDevices();
+      if (devices.length === 0) errorAndExit("No Vial keyboard detected.");
+      device = new HID.HID(devices[0].path);
+    }
+
+    try {
+      const definition = readDefinition(device);
+      const rows = definition.matrix?.rows || 0;
+      const cols = definition.matrix?.cols || 0;
+      const layerCount = getLayerCount(device);
+
+      // Read first chunk of keymap as a fingerprint (fast, not full read)
+      const totalBytes = layerCount * rows * cols * 2;
+      const sampleSize = Math.min(totalBytes, 56); // 2 chunks = fast
+      const sample = Buffer.alloc(sampleSize);
+
+      for (let offset = 0; offset < sampleSize; offset += BUFFER_FETCH_CHUNK) {
+        const chunkSize = Math.min(BUFFER_FETCH_CHUNK, sampleSize - offset);
+        const chunk = getKeymapBuffer(device, offset, chunkSize);
+        chunk.copy(sample, offset);
+      }
+
+      // Also read last chunk for better change detection
+      const lastOffset = Math.max(0, totalBytes - BUFFER_FETCH_CHUNK);
+      const lastChunk = getKeymapBuffer(device, lastOffset, Math.min(BUFFER_FETCH_CHUNK, totalBytes - lastOffset));
+
+      // Simple hash: combine sample bytes
+      const crypto = require("crypto");
+      const hash = crypto.createHash("md5")
+        .update(sample)
+        .update(lastChunk)
+        .update(Buffer.from([layerCount, rows, cols]))
+        .digest("hex");
+
+      output({ hash, layerCount, rows, cols });
+    } finally {
+      device.close();
+    }
+  } else if (command === "lock-status") {
+    // Check if the keyboard is locked
+    let device;
+    if (devicePath) {
+      device = new HID.HID(devicePath);
+    } else {
+      const devices = findVialDevices();
+      if (devices.length === 0) errorAndExit("No Vial keyboard detected.");
+      device = new HID.HID(devices[0].path);
+    }
+
+    try {
+      const resp = sendAndReceive(device, CMD_VIA_VIAL_PREFIX, CMD_VIAL_GET_UNLOCK_STATUS);
+      // Response byte 0: locked (0) or unlocked (1)
+      // Response bytes 1+: if locked, the matrix positions of unlock keys
+      const isLocked = resp[0] === 0;
+      const unlockInProgress = resp[1] === 1;
+
+      // Parse unlock key positions (if locked)
+      const unlockKeys = [];
+      if (isLocked) {
+        // Bytes after status contain row,col pairs of keys to hold for unlock
+        for (let i = 2; i < resp.length - 1; i += 2) {
+          const row = resp[i];
+          const col = resp[i + 1];
+          if (row === 0 && col === 0 && i > 2) break; // End marker
+          if (row !== 0xff && col !== 0xff) { // Skip padding
+            unlockKeys.push({ row, col });
+          }
+        }
+      }
+
+      log(`Lock status: ${isLocked ? "LOCKED" : "UNLOCKED"}, unlock keys: ${unlockKeys.length}`);
+      output({
+        isLocked,
+        unlockInProgress,
+        unlockKeys,
       });
     } finally {
       device.close();

@@ -7,7 +7,12 @@
 
 /* eslint-disable @typescript-eslint/ban-types */
 
-type ExtensionPreferences = {}
+type ExtensionPreferences = {
+  /** Color Theme - Color scheme for keyboard visualization */
+  "theme": "auto" | "minimal" | "catppuccin" | "nord" | "solarized" | "highcontrast",
+  /** Default View - How to display split keyboards */
+  "defaultView": "both" | "left" | "right"
+}
 
 /** Preferences accessible in all the extension's commands */
 declare type Preferences = ExtensionPreferences

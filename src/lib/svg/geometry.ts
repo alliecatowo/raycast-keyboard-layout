@@ -4,7 +4,7 @@ import { PhysicalKey } from "../types";
 export const KEY_UNIT = 64;
 
 /** Gap between keys in pixels */
-export const KEY_GAP = 5;
+export const KEY_GAP = 4;
 
 /** Corner radius for key rectangles */
 export const KEY_RADIUS = 7;
@@ -13,13 +13,13 @@ export const KEY_RADIUS = 7;
 export const KEYCAP_INSET = 3;
 
 /** Padding around the entire SVG */
-export const SVG_PADDING = 20;
+export const SVG_PADDING = 14;
 
 /** Extra gap to insert between split keyboard halves */
-export const SPLIT_GAP = 28;
+export const SPLIT_GAP = 16;
 
 /** Header height for layer name */
-export const HEADER_HEIGHT = 36;
+export const HEADER_HEIGHT = 34;
 
 /** Convert key units to pixels */
 export function toPixels(units: number): number {

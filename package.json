@@ -82,6 +82,37 @@
       "interval": "10m"
     }
   ],
+  "preferences": [
+    {
+      "name": "theme",
+      "title": "Color Theme",
+      "description": "Color scheme for keyboard visualization",
+      "type": "dropdown",
+      "required": false,
+      "default": "auto",
+      "data": [
+        { "title": "Auto (System)", "value": "auto" },
+        { "title": "Minimal (Light)", "value": "minimal" },
+        { "title": "Catppuccin (Dark)", "value": "catppuccin" },
+        { "title": "Nord", "value": "nord" },
+        { "title": "Solarized", "value": "solarized" },
+        { "title": "High Contrast", "value": "highcontrast" }
+      ]
+    },
+    {
+      "name": "defaultView",
+      "title": "Default View",
+      "description": "How to display split keyboards",
+      "type": "dropdown",
+      "required": false,
+      "default": "both",
+      "data": [
+        { "title": "Both Halves", "value": "both" },
+        { "title": "Left Half", "value": "left" },
+        { "title": "Right Half", "value": "right" }
+      ]
+    }
+  ],
   "dependencies": {
     "@raycast/api": "^1.104.11",
     "@raycast/utils": "^1.17.0"

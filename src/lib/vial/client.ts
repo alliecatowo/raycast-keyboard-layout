@@ -270,6 +270,26 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
   };
 }
 
+/** Get a quick hash of the current keymap to detect changes */
+export async function readKeymapHash(): Promise<{ hash: string; layerCount: number }> {
+  const result = (await runHelper(["keymap-hash"])) as { hash: string; layerCount: number; rows: number; cols: number };
+  return result;
+}
+
+/** Check if the keyboard is locked and get unlock key positions */
+export async function readLockStatus(): Promise<{
+  isLocked: boolean;
+  unlockInProgress: boolean;
+  unlockKeys: Array<{ row: number; col: number }>;
+}> {
+  const result = (await runHelper(["lock-status"])) as {
+    isLocked: boolean;
+    unlockInProgress: boolean;
+    unlockKeys: Array<{ row: number; col: number }>;
+  };
+  return result;
+}
+
 /** Read the switch matrix state (which keys are physically pressed) */
 export async function readMatrixState(): Promise<{ rows: number; cols: number; pressed: Array<{ row: number; col: number }> }> {
   const result = (await runHelper(["matrix"])) as {

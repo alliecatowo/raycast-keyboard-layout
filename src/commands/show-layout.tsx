@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
+import { Action, ActionPanel, Detail, environment, getPreferenceValues, Icon } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { getActiveBoard } from "../lib/storage/active-board";
@@ -7,12 +7,21 @@ import { setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import AddBoardCommand from "./add-board";
 
+interface Preferences {
+  theme?: string;
+  defaultView?: "both" | "left" | "right";
+}
+
 export default function ShowLayoutCommand() {
   const [board, setBoard] = useState<BoardProfile | undefined>();
   const [allBoards, setAllBoards] = useState<BoardProfile[]>([]);
   const [focusLayer, setFocusLayer] = useState<number | null>(null);
+  const [splitView, setSplitView] = useState<"both" | "left" | "right">(
+    (getPreferenceValues<Preferences>().defaultView as "both" | "left" | "right") || "both"
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [noBoards, setNoBoards] = useState(false);
+  const prefs = getPreferenceValues<Preferences>();
 
   useEffect(() => {
     async function load() {
@@ -69,9 +78,11 @@ export default function ShowLayoutCommand() {
     try {
       const result = generateSvg(board.physicalLayout, {
         appearance,
+        theme: prefs.theme,
         layerIndex: layerIdx,
         layers: board.layers,
         showGhostKeys: true,
+        splitView,
       });
       if (focusLayer === null) {
         // All layers mode — add layer name as header
@@ -173,12 +184,50 @@ export default function ShowLayoutCommand() {
                 ))}
             </ActionPanel.Section>
           )}
+          <ActionPanel.Section title="Split View">
+            <Action
+              title="Show Both Halves"
+              icon={Icon.AppWindowGrid2x2}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
+              onAction={() => setSplitView("both")}
+            />
+            <Action
+              title="Show Left Half"
+              icon={Icon.ArrowLeft}
+              shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
+              onAction={() => setSplitView("left")}
+            />
+            <Action
+              title="Show Right Half"
+              icon={Icon.ArrowRight}
+              shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
+              onAction={() => setSplitView("right")}
+            />
+          </ActionPanel.Section>
           <ActionPanel.Section title="Actions">
             <Action.Push
               title="Add Board"
               icon={Icon.Plus}
               target={<AddBoardCommand />}
               shortcut={{ modifiers: ["cmd"], key: "n" }}
+            />
+            <Action.ShowInFinder
+              title="Open SVG in Viewer"
+              path={(() => {
+                try {
+                  return generateSvg(board.physicalLayout, {
+                    appearance,
+                    theme: prefs.theme,
+                    layerIndex: focusLayer ?? 0,
+                    layers: board.layers,
+                    showGhostKeys: true,
+                    splitView,
+                  }).filePath;
+                } catch {
+                  return "";
+                }
+              })()}
+              shortcut={{ modifiers: ["cmd", "shift"], key: "o" }}
             />
             <Action.Open
               title="Open Vial"

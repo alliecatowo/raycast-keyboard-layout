@@ -87,11 +87,13 @@ export interface QmkInfoLayout {
 /** Options for SVG rendering */
 export interface RenderOptions {
   appearance: "light" | "dark";
+  theme?: string; // Theme ID from preferences
   highlightKeys?: number[]; // Indices of keys to highlight (for search)
   showGhostKeys?: boolean; // Show inherited keys for KC_TRNS
   layerIndex: number;
   layers: Layer[]; // Full layer stack (for ghost key resolution)
   width?: number; // Target width in pixels
+  splitView?: "both" | "left" | "right"; // Which half(s) to render
 }
 
 /** Result of SVG generation */

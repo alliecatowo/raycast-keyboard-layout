@@ -1,5 +1,6 @@
 import * as nodeCrypto from "crypto";
 import { BoardProfile, Layer } from "../types";
+import { ZMK_LABELS } from "./vendored-zmk-keycodes";
 
 /**
  * Parse a ZMK .keymap file (devicetree format) to extract layers and bindings.
@@ -228,7 +229,8 @@ function zmkBindingToKeycode(binding: string): string {
   const kpMatch = trimmed.match(/^&kp\s+(.+)$/);
   if (kpMatch) {
     const key = kpMatch[1].trim();
-    return ZMK_TO_QMK[key] ?? `KC_${key}`;
+    // Try QMK mapping first, then vendored ZMK labels, then raw
+    return ZMK_TO_QMK[key] ?? (ZMK_LABELS[key] ? `KC_${key}` : `KC_${key}`);
   }
 
   // &mt MOD KEY — mod-tap (hold=mod, tap=key)

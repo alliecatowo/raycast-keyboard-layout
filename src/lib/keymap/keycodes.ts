@@ -1,6 +1,7 @@
 import { KeyCategory, KeycodeDefinition } from "../types";
 import { KEYCODES } from "./keycodes-data";
 import { VIAL_LABELS } from "./vendored-keycodes";
+import { ZMK_LABELS } from "./vendored-zmk-keycodes";
 
 // ── Lookup indices (built once at import time) ───────────
 
@@ -358,6 +359,13 @@ export function parseKeycode(raw: string): ParsedKeycode {
   const vialLabel = VIAL_LABELS[trimmed];
   if (vialLabel) {
     return { label: vialLabel, category: "alpha", raw: trimmed };
+  }
+
+  // Vendored ZMK label database (644 entries)
+  const zmkKey = trimmed.replace(/^KC_/, "");
+  const zmkLabel = ZMK_LABELS[zmkKey];
+  if (zmkLabel) {
+    return { label: zmkLabel, category: "alpha", raw: trimmed };
   }
 
   // Unknown: strip KC_ prefix and display as-is

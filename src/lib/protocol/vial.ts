@@ -15,12 +15,25 @@ import { numericKeycodeToString } from "../vial/keycode-map";
 // ── Protocol Constants ───────────────────────────────────
 
 const CMD_VIA_GET_PROTOCOL_VERSION = 0x01;
+const CMD_VIA_GET_KEYBOARD_VALUE = 0x02;
+const CMD_VIA_LIGHTING_SET_VALUE = 0x07;
+const CMD_VIA_LIGHTING_GET_VALUE = 0x08;
+const CMD_VIA_LIGHTING_SAVE = 0x09;
 const CMD_VIA_GET_LAYER_COUNT = 0x11;
 const CMD_VIA_KEYMAP_GET_BUFFER = 0x12;
 const CMD_VIA_VIAL_PREFIX = 0xfe;
 const CMD_VIAL_GET_KEYBOARD_ID = 0x00;
 const CMD_VIAL_GET_SIZE = 0x01;
 const CMD_VIAL_GET_DEFINITION = 0x02;
+const CMD_VIAL_GET_UNLOCK_STATUS = 0x05;
+const CMD_VIAL_QMK_SETTINGS_QUERY = 0x09;
+const CMD_VIAL_QMK_SETTINGS_GET = 0x0a;
+const CMD_VIAL_QMK_SETTINGS_SET = 0x0b;
+const VIA_SWITCH_MATRIX_STATE = 0x03;
+const RGB_BRIGHTNESS = 0x80;
+const RGB_EFFECT = 0x81;
+const RGB_EFFECT_SPEED = 0x82;
+const RGB_COLOR = 0x83;
 const PACKET_SIZE = 32;
 const BUFFER_FETCH_CHUNK = 28;
 
@@ -234,4 +247,176 @@ export function readVialBoard(conn: TransportConnection): BoardProfile {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+// ── Additional Protocol Operations ───────────────────────
+
+/** Get lock status + unlock key positions */
+export function getVialLockStatus(conn: TransportConnection): {
+  isLocked: boolean;
+  unlockKeys: Array<{ row: number; col: number }>;
+} {
+  const resp = conn.sendAndReceive([
+    CMD_VIA_VIAL_PREFIX,
+    CMD_VIAL_GET_UNLOCK_STATUS,
+  ]);
+  const isLocked = resp[0] === 0;
+  const unlockKeys: Array<{ row: number; col: number }> = [];
+  if (isLocked) {
+    for (let i = 2; i < resp.length - 1; i += 2) {
+      if (resp[i] === 0 && resp[i + 1] === 0 && i > 2) break;
+      if (resp[i] !== 0xff && resp[i + 1] !== 0xff) {
+        unlockKeys.push({ row: resp[i], col: resp[i + 1] });
+      }
+    }
+  }
+  return { isLocked, unlockKeys };
+}
+
+/** Read the switch matrix state (which keys are pressed) */
+export function getVialMatrixState(
+  conn: TransportConnection,
+  rows: number,
+  cols: number,
+): Array<{ row: number; col: number }> {
+  const resp = conn.sendAndReceive([
+    CMD_VIA_GET_KEYBOARD_VALUE,
+    VIA_SWITCH_MATRIX_STATE,
+  ]);
+  const pressed: Array<{ row: number; col: number }> = [];
+  const bytesPerRow = Math.ceil(cols / 8);
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const byteIndex = 2 + row * bytesPerRow + Math.floor(col / 8);
+      const bitIndex = col % 8;
+      if (
+        byteIndex < resp.length &&
+        (resp[byteIndex] & (1 << bitIndex)) !== 0
+      ) {
+        pressed.push({ row, col });
+      }
+    }
+  }
+  return pressed;
+}
+
+/** Query supported QMK Settings IDs */
+export function queryVialQsids(conn: TransportConnection): number[] {
+  const qsids: number[] = [];
+  let page = 0;
+  while (true) {
+    const resp = conn.sendAndReceive([
+      CMD_VIA_VIAL_PREFIX,
+      CMD_VIAL_QMK_SETTINGS_QUERY,
+      page,
+    ]);
+    let done = false;
+    for (let i = 0; i < resp.length - 1; i += 2) {
+      const qsid = resp[i] | (resp[i + 1] << 8);
+      if (qsid === 0xffff) {
+        done = true;
+        break;
+      }
+      if (qsid !== 0) qsids.push(qsid);
+    }
+    if (done || page++ > 10) break;
+  }
+  return qsids;
+}
+
+/** Read a QMK setting */
+export function getVialQmkSetting(
+  conn: TransportConnection,
+  qsid: number,
+): number {
+  const resp = conn.sendAndReceive([
+    CMD_VIA_VIAL_PREFIX,
+    CMD_VIAL_QMK_SETTINGS_GET,
+    qsid & 0xff,
+    (qsid >> 8) & 0xff,
+  ]);
+  return resp[0] | (resp[1] << 8) | (resp[2] << 16) | (resp[3] << 24);
+}
+
+/** Write a QMK setting */
+export function setVialQmkSetting(
+  conn: TransportConnection,
+  qsid: number,
+  value: number,
+): void {
+  conn.sendAndReceive([
+    CMD_VIA_VIAL_PREFIX,
+    CMD_VIAL_QMK_SETTINGS_SET,
+    qsid & 0xff,
+    (qsid >> 8) & 0xff,
+    value & 0xff,
+    (value >> 8) & 0xff,
+    (value >> 16) & 0xff,
+    (value >> 24) & 0xff,
+  ]);
+}
+
+/** Read RGB lighting values */
+export function getVialRgb(conn: TransportConnection): {
+  brightness: number;
+  effect: number;
+  speed: number;
+  hue: number;
+  saturation: number;
+} | null {
+  try {
+    const br = conn.sendAndReceive([
+      CMD_VIA_LIGHTING_GET_VALUE,
+      RGB_BRIGHTNESS,
+    ]);
+    const ef = conn.sendAndReceive([CMD_VIA_LIGHTING_GET_VALUE, RGB_EFFECT]);
+    const sp = conn.sendAndReceive([
+      CMD_VIA_LIGHTING_GET_VALUE,
+      RGB_EFFECT_SPEED,
+    ]);
+    const cl = conn.sendAndReceive([CMD_VIA_LIGHTING_GET_VALUE, RGB_COLOR]);
+    return {
+      brightness: br[2],
+      effect: ef[2],
+      speed: sp[2],
+      hue: cl[2],
+      saturation: cl[3],
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Write RGB lighting values and persist to EEPROM */
+export function setVialRgb(
+  conn: TransportConnection,
+  brightness: number,
+  effect: number,
+  speed: number,
+  hue: number,
+  saturation: number,
+): void {
+  conn.sendAndReceive([CMD_VIA_LIGHTING_SET_VALUE, RGB_BRIGHTNESS, brightness]);
+  conn.sendAndReceive([CMD_VIA_LIGHTING_SET_VALUE, RGB_EFFECT, effect]);
+  conn.sendAndReceive([CMD_VIA_LIGHTING_SET_VALUE, RGB_EFFECT_SPEED, speed]);
+  conn.sendAndReceive([CMD_VIA_LIGHTING_SET_VALUE, RGB_COLOR, hue, saturation]);
+  conn.sendAndReceive([CMD_VIA_LIGHTING_SAVE]);
+}
+
+/** Quick keymap hash for change detection */
+export function getVialKeymapHash(conn: TransportConnection): string {
+  // Read first + last chunks as a fingerprint
+  const layerResp = conn.sendAndReceive([CMD_VIA_GET_LAYER_COUNT]);
+  const layerCount = layerResp[1];
+
+  // Read a sample of the keymap
+  const sample1 = conn.sendAndReceive([CMD_VIA_KEYMAP_GET_BUFFER, 0, 0, 28]);
+  const sample2 = conn.sendAndReceive([CMD_VIA_KEYMAP_GET_BUFFER, 0, 28, 28]);
+
+  return nodeCrypto
+    .createHash("md5")
+    .update(sample1)
+    .update(sample2)
+    .update(Buffer.from([layerCount]))
+    .digest("hex");
 }

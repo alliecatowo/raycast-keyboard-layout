@@ -1,11 +1,16 @@
 /**
- * ZMK adapter using serial + BLE transports.
- * Serial: POSIX stty + fs (no native modules)
- * BLE: koffi → SimpleBLE (prebuilt, same pattern as HIDAPI)
+ * ZMK adapter — uses serial transport for USB, BLE transport for wireless.
+ * Probes serial ports for ZMK Studio boards using the protobuf protocol.
  */
 
 import { BoardProfile } from "../types";
-import { zmkSerialTransport, zmkBleTransport } from "../transport";
+import { zmkSerialTransport } from "../transport";
+import {
+  getDeviceInfo,
+  readZmkBoard,
+  getLockState,
+  setLayerName,
+} from "../protocol/zmk-studio";
 import { DetectedDevice, FirmwareAdapter } from "./adapter";
 
 export class ZmkAdapter implements FirmwareAdapter {
@@ -13,40 +18,30 @@ export class ZmkAdapter implements FirmwareAdapter {
   readonly displayName = "ZMK Studio";
 
   async detectDevices(): Promise<DetectedDevice[]> {
-    // Try both USB serial and BLE in parallel
-    const [serialDevices, bleDevices] = await Promise.allSettled([
-      zmkSerialTransport.discover(),
-      zmkBleTransport.discover().catch(() => []),
-    ]);
-
+    const candidates = await zmkSerialTransport.discover();
     const devices: DetectedDevice[] = [];
 
-    if (serialDevices.status === "fulfilled") {
-      devices.push(
-        ...serialDevices.value.map((d) => ({
-          path: d.path,
-          name: d.name,
-          manufacturer: "ZMK",
-          firmware: "zmk" as const,
-          vendorId: "",
-          productId: "",
-          transport: "serial" as const,
-        })),
-      );
-    }
-
-    if (bleDevices.status === "fulfilled") {
-      devices.push(
-        ...bleDevices.value.map((d) => ({
-          path: d.path,
-          name: d.name,
-          manufacturer: "ZMK (BLE)",
-          firmware: "zmk" as const,
-          vendorId: "",
-          productId: "",
-          transport: "serial" as const, // TODO: change to "ble" when BLE connect works
-        })),
-      );
+    for (const candidate of candidates) {
+      try {
+        const conn = zmkSerialTransport.connect(candidate);
+        try {
+          const info = getDeviceInfo(conn);
+          devices.push({
+            path: candidate.path,
+            name: info.name,
+            manufacturer: "ZMK",
+            firmware: "zmk" as const,
+            vendorId: "",
+            productId: "",
+            serialNumber: info.serialNumber,
+            transport: "serial" as const,
+          });
+        } finally {
+          conn.close();
+        }
+      } catch {
+        // Not a ZMK Studio board — skip
+      }
     }
 
     return devices;
@@ -55,14 +50,38 @@ export class ZmkAdapter implements FirmwareAdapter {
   async readBoard(device: DetectedDevice): Promise<BoardProfile> {
     const conn = zmkSerialTransport.connect({
       ...device,
-      transportType: device.transport === "serial" ? "serial" : "ble",
+      transportType: "serial",
     });
     try {
-      // Verify connectivity by sending getDeviceInfo
-      conn.sendAndReceive([0x01]); // placeholder — needs protobuf encoding
-      throw new Error(
-        "Full ZMK board read coming soon. Device detected at: " + device.path,
-      );
+      return readZmkBoard(conn);
+    } finally {
+      conn.close();
+    }
+  }
+
+  async getLockStatus(device: DetectedDevice): Promise<boolean> {
+    const conn = zmkSerialTransport.connect({
+      ...device,
+      transportType: "serial",
+    });
+    try {
+      return getLockState(conn);
+    } finally {
+      conn.close();
+    }
+  }
+
+  async setLayerName(
+    device: DetectedDevice,
+    layerId: number,
+    name: string,
+  ): Promise<void> {
+    const conn = zmkSerialTransport.connect({
+      ...device,
+      transportType: "serial",
+    });
+    try {
+      setLayerName(conn, layerId, name);
     } finally {
       conn.close();
     }

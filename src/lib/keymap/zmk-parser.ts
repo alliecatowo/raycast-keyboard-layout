@@ -5,220 +5,14 @@ import { ZMK_LABELS } from "./vendored-zmk-keycodes";
 /**
  * Parse a ZMK .keymap file (devicetree format) to extract layers and bindings.
  *
- * ZMK keymaps use C-preprocessor-like devicetree syntax:
- *
- *   / {
- *     keymap {
- *       compatible = "zmk,keymap";
- *       default_layer {
- *         display-name = "Base";
- *         bindings = <
- *           &kp Q &kp W &kp E ...
- *         >;
- *       };
- *     };
- *   };
- *
- * This parser handles the common cases without a full devicetree parser.
- * It strips comments and preprocessor directives, then extracts layer blocks.
+ * ZMK keycodes stay in ZMK-native format (no QMK translation).
+ * Display labels come from vendored ZMK_LABELS (644 entries).
  */
-
-// ── ZMK binding → QMK-style keycode mapping ──────────────
-
-const ZMK_TO_QMK: Record<string, string> = {
-  // Letters (ZMK uses different names)
-  A: "KC_A",
-  B: "KC_B",
-  C: "KC_C",
-  D: "KC_D",
-  E: "KC_E",
-  F: "KC_F",
-  G: "KC_G",
-  H: "KC_H",
-  I: "KC_I",
-  J: "KC_J",
-  K: "KC_K",
-  L: "KC_L",
-  M: "KC_M",
-  N: "KC_N",
-  O: "KC_O",
-  P: "KC_P",
-  Q: "KC_Q",
-  R: "KC_R",
-  S: "KC_S",
-  T: "KC_T",
-  U: "KC_U",
-  V: "KC_V",
-  W: "KC_W",
-  X: "KC_X",
-  Y: "KC_Y",
-  Z: "KC_Z",
-
-  // Numbers
-  N1: "KC_1",
-  N2: "KC_2",
-  N3: "KC_3",
-  N4: "KC_4",
-  N5: "KC_5",
-  N6: "KC_6",
-  N7: "KC_7",
-  N8: "KC_8",
-  N9: "KC_9",
-  N0: "KC_0",
-  NUMBER_1: "KC_1",
-  NUMBER_2: "KC_2",
-  NUMBER_3: "KC_3",
-  NUMBER_4: "KC_4",
-  NUMBER_5: "KC_5",
-  NUMBER_6: "KC_6",
-  NUMBER_7: "KC_7",
-  NUMBER_8: "KC_8",
-  NUMBER_9: "KC_9",
-  NUMBER_0: "KC_0",
-
-  // Modifiers
-  LSHIFT: "KC_LSFT",
-  RSHIFT: "KC_RSFT",
-  LSHFT: "KC_LSFT",
-  RSHFT: "KC_RSFT",
-  LCTRL: "KC_LCTL",
-  RCTRL: "KC_RCTL",
-  LALT: "KC_LALT",
-  RALT: "KC_RALT",
-  LGUI: "KC_LGUI",
-  RGUI: "KC_RGUI",
-  LCMD: "KC_LGUI",
-  RCMD: "KC_RGUI",
-  LMETA: "KC_LGUI",
-  RMETA: "KC_RGUI",
-
-  // Navigation
-  UP: "KC_UP",
-  DOWN: "KC_DOWN",
-  LEFT: "KC_LEFT",
-  RIGHT: "KC_RGHT",
-  HOME: "KC_HOME",
-  END: "KC_END",
-  PG_UP: "KC_PGUP",
-  PG_DN: "KC_PGDN",
-  PAGE_UP: "KC_PGUP",
-  PAGE_DOWN: "KC_PGDN",
-
-  // Editing
-  ENTER: "KC_ENT",
-  RET: "KC_ENT",
-  RETURN: "KC_ENT",
-  ESCAPE: "KC_ESC",
-  ESC: "KC_ESC",
-  BACKSPACE: "KC_BSPC",
-  BSPC: "KC_BSPC",
-  TAB: "KC_TAB",
-  SPACE: "KC_SPC",
-  DELETE: "KC_DEL",
-  DEL: "KC_DEL",
-  INSERT: "KC_INS",
-  CAPS: "KC_CAPS",
-  CAPSLOCK: "KC_CAPS",
-  CLCK: "KC_CAPS",
-
-  // Symbols
-  MINUS: "KC_MINS",
-  EQUAL: "KC_EQL",
-  LBKT: "KC_LBRC",
-  RBKT: "KC_RBRC",
-  LEFT_BRACKET: "KC_LBRC",
-  RIGHT_BRACKET: "KC_RBRC",
-  BACKSLASH: "KC_BSLS",
-  BSLH: "KC_BSLS",
-  SEMICOLON: "KC_SCLN",
-  SEMI: "KC_SCLN",
-  APOSTROPHE: "KC_QUOT",
-  APOS: "KC_QUOT",
-  SQT: "KC_QUOT",
-  GRAVE: "KC_GRV",
-  COMMA: "KC_COMM",
-  PERIOD: "KC_DOT",
-  DOT: "KC_DOT",
-  SLASH: "KC_SLSH",
-  FSLH: "KC_SLSH",
-
-  // Shifted symbols
-  EXCLAMATION: "KC_EXLM",
-  EXCL: "KC_EXLM",
-  AT_SIGN: "KC_AT",
-  AT: "KC_AT",
-  HASH: "KC_HASH",
-  POUND: "KC_HASH",
-  DOLLAR: "KC_DLR",
-  DLLR: "KC_DLR",
-  PERCENT: "KC_PERC",
-  PRCNT: "KC_PERC",
-  CARET: "KC_CIRC",
-  AMPERSAND: "KC_AMPR",
-  AMPS: "KC_AMPR",
-  ASTERISK: "KC_ASTR",
-  STAR: "KC_ASTR",
-  LEFT_PARENTHESIS: "KC_LPRN",
-  LPAR: "KC_LPRN",
-  RIGHT_PARENTHESIS: "KC_RPRN",
-  RPAR: "KC_RPRN",
-  UNDERSCORE: "KC_UNDS",
-  UNDER: "KC_UNDS",
-  PLUS: "KC_PLUS",
-  LEFT_BRACE: "KC_LCBR",
-  LBRC: "KC_LCBR",
-  RIGHT_BRACE: "KC_RCBR",
-  RBRC: "KC_RCBR",
-  PIPE: "KC_PIPE",
-  COLON: "KC_COLN",
-  DOUBLE_QUOTES: "KC_DQUO",
-  DQT: "KC_DQUO",
-  LESS_THAN: "KC_LABK",
-  LT: "KC_LABK",
-  GREATER_THAN: "KC_RABK",
-  GT: "KC_RABK",
-  QUESTION: "KC_QUES",
-  QMARK: "KC_QUES",
-  TILDE: "KC_TILD",
-
-  // Function keys
-  F1: "KC_F1",
-  F2: "KC_F2",
-  F3: "KC_F3",
-  F4: "KC_F4",
-  F5: "KC_F5",
-  F6: "KC_F6",
-  F7: "KC_F7",
-  F8: "KC_F8",
-  F9: "KC_F9",
-  F10: "KC_F10",
-  F11: "KC_F11",
-  F12: "KC_F12",
-
-  // Media
-  C_MUTE: "KC_MUTE",
-  C_VOL_UP: "KC_VOLU",
-  C_VOL_DN: "KC_VOLD",
-  C_NEXT: "KC_MNXT",
-  C_PREV: "KC_MPRV",
-  C_STOP: "KC_MSTP",
-  C_PP: "KC_MPLY",
-  C_PLAY_PAUSE: "KC_MPLY",
-  C_BRI_UP: "KC_BRIU",
-  C_BRI_DN: "KC_BRID",
-
-  // System
-  PRINTSCREEN: "KC_PSCR",
-  PSCRN: "KC_PSCR",
-  SCROLLLOCK: "KC_SCRL",
-  SLCK: "KC_SCRL",
-  PAUSE_BREAK: "KC_PAUS",
-};
 
 /**
  * Convert a ZMK binding to a display-ready keycode string.
- * ZMK bindings stay in ZMK-native format — no QMK translation.
- * The display parser handles rendering via ZMK_LABELS.
+ * Keys are stored as KC_{ZMK_NAME} — the display parser resolves
+ * them via ZMK_LABELS.
  */
 function zmkBindingToKeycode(binding: string): string {
   const trimmed = binding.trim();
@@ -226,30 +20,22 @@ function zmkBindingToKeycode(binding: string): string {
   if (trimmed === "&none") return "KC_NO";
   if (trimmed === "&trans") return "KC_TRNS";
 
-  // &kp KEY — key press (keep ZMK name, prefix with KC_ for display parser)
+  // &kp KEY — key press (store as KC_ prefixed ZMK name)
   const kpMatch = trimmed.match(/^&kp\s+(.+)$/);
-  if (kpMatch) {
-    const key = kpMatch[1].trim();
-    // Use QMK name if we have a direct mapping, otherwise keep ZMK name
-    return ZMK_TO_QMK[key] ?? `KC_${key}`;
-  }
+  if (kpMatch) return `KC_${kpMatch[1].trim()}`;
 
   // &mt MOD KEY — mod-tap
   const mtMatch = trimmed.match(/^&mt\s+(\S+)\s+(\S+)$/);
   if (mtMatch) {
     const mod = ZMK_LABELS[mtMatch[1]] ?? mtMatch[1];
-    const key = ZMK_TO_QMK[mtMatch[2]] ?? mtMatch[2];
-    return `MT(${mod}, ${key})`;
+    return `MT(${mod}, KC_${mtMatch[2]})`;
   }
 
   // &lt LAYER KEY — layer-tap
   const ltMatch = trimmed.match(/^&lt\s+(\d+)\s+(\S+)$/);
-  if (ltMatch) {
-    const key = ZMK_TO_QMK[ltMatch[2]] ?? ltMatch[2];
-    return `LT(${ltMatch[1]}, ${key})`;
-  }
+  if (ltMatch) return `LT(${ltMatch[1]}, KC_${ltMatch[2]})`;
 
-  // Layer behaviors — these are the same across QMK/ZMK conceptually
+  // Layer behaviors
   const moMatch = trimmed.match(/^&mo\s+(\d+)$/);
   if (moMatch) return `MO(${moMatch[1]})`;
 
@@ -313,7 +99,7 @@ export function parseZmkKeymap(
   let cleaned = content.replace(/\/\*[\s\S]*?\*\//g, "");
   cleaned = cleaned.replace(/\/\/.*$/gm, "");
 
-  // Strip preprocessor directives (#include, #define, etc.)
+  // Strip preprocessor directives
   cleaned = cleaned.replace(/^#.*$/gm, "");
 
   // Find the keymap node
@@ -329,7 +115,6 @@ export function parseZmkKeymap(
   const keymapBlock = keymapMatch[1];
 
   // Extract layer blocks
-  // Pattern: layer_name { display-name = "Name"; bindings = < ... >; };
   const layerPattern = /(\w+)\s*\{([^}]*bindings\s*=\s*<([\s\S]*?)>[^}]*)\}/g;
   const layers: Layer[] = [];
   let match;
@@ -343,7 +128,7 @@ export function parseZmkKeymap(
     const displayNameMatch = layerBody.match(/display-name\s*=\s*"([^"]+)"/);
     const displayName = displayNameMatch?.[1];
 
-    // Parse bindings: split on & (each binding starts with &)
+    // Parse bindings
     const bindings = bindingsStr
       .trim()
       .split(/(?=&)/)

@@ -215,69 +215,65 @@ const ZMK_TO_QMK: Record<string, string> = {
   PAUSE_BREAK: "KC_PAUS",
 };
 
-/** Convert a single ZMK binding to a QMK-style keycode string */
+/**
+ * Convert a ZMK binding to a display-ready keycode string.
+ * ZMK bindings stay in ZMK-native format — no QMK translation.
+ * The display parser handles rendering via ZMK_LABELS.
+ */
 function zmkBindingToKeycode(binding: string): string {
   const trimmed = binding.trim();
 
-  // &none
   if (trimmed === "&none") return "KC_NO";
-
-  // &trans
   if (trimmed === "&trans") return "KC_TRNS";
 
-  // &kp KEY — key press
+  // &kp KEY — key press (keep ZMK name, prefix with KC_ for display parser)
   const kpMatch = trimmed.match(/^&kp\s+(.+)$/);
   if (kpMatch) {
     const key = kpMatch[1].trim();
-    // Try QMK mapping first, then vendored ZMK labels, then raw
-    return ZMK_TO_QMK[key] ?? (ZMK_LABELS[key] ? `KC_${key}` : `KC_${key}`);
+    // Use QMK name if we have a direct mapping, otherwise keep ZMK name
+    return ZMK_TO_QMK[key] ?? `KC_${key}`;
   }
 
-  // &mt MOD KEY — mod-tap (hold=mod, tap=key)
+  // &mt MOD KEY — mod-tap
   const mtMatch = trimmed.match(/^&mt\s+(\S+)\s+(\S+)$/);
   if (mtMatch) {
-    const mod = ZMK_TO_QMK[mtMatch[1]] ?? mtMatch[1];
+    const mod = ZMK_LABELS[mtMatch[1]] ?? mtMatch[1];
     const key = ZMK_TO_QMK[mtMatch[2]] ?? mtMatch[2];
     return `MT(${mod}, ${key})`;
   }
 
-  // &lt LAYER KEY — layer-tap (hold=layer, tap=key)
+  // &lt LAYER KEY — layer-tap
   const ltMatch = trimmed.match(/^&lt\s+(\d+)\s+(\S+)$/);
   if (ltMatch) {
     const key = ZMK_TO_QMK[ltMatch[2]] ?? ltMatch[2];
     return `LT(${ltMatch[1]}, ${key})`;
   }
 
-  // &mo LAYER — momentary layer
+  // Layer behaviors — these are the same across QMK/ZMK conceptually
   const moMatch = trimmed.match(/^&mo\s+(\d+)$/);
   if (moMatch) return `MO(${moMatch[1]})`;
 
-  // &to LAYER — to layer
   const toMatch = trimmed.match(/^&to\s+(\d+)$/);
   if (toMatch) return `TO(${toMatch[1]})`;
 
-  // &tog LAYER — toggle layer
   const togMatch = trimmed.match(/^&tog\s+(\d+)$/);
   if (togMatch) return `TG(${togMatch[1]})`;
 
-  // &sl LAYER — sticky/one-shot layer
   const slMatch = trimmed.match(/^&sl\s+(\d+)$/);
   if (slMatch) return `OSL(${slMatch[1]})`;
 
   // &sk MOD — sticky/one-shot mod
   const skMatch = trimmed.match(/^&sk\s+(\S+)$/);
   if (skMatch) {
-    const mod = ZMK_TO_QMK[skMatch[1]] ?? skMatch[1];
+    const mod = ZMK_LABELS[skMatch[1]] ?? skMatch[1];
     return `OSM(${mod})`;
   }
 
-  // &bootloader
+  // System behaviors
   if (trimmed === "&bootloader") return "QK_BOOT";
-
-  // &sys_reset or &reset
   if (trimmed === "&sys_reset" || trimmed === "&reset") return "QK_RBT";
 
-  // Unknown binding — return as-is
+  // Unknown — strip & prefix
   return trimmed.replace(/^&/, "");
 }
 

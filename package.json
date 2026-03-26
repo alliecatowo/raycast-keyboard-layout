@@ -21,28 +21,53 @@
       "title": "View Keymap",
       "description": "Display your active keyboard's layout and layers",
       "mode": "view",
-      "keywords": ["keyboard", "layout", "keymap", "layer", "qmk"]
+      "keywords": [
+        "keyboard",
+        "layout",
+        "keymap",
+        "layer",
+        "qmk"
+      ]
     },
     {
       "name": "search-keys",
       "title": "Find a Key",
       "description": "Search for any key across all your boards and layers",
       "mode": "view",
-      "keywords": ["search", "find", "key", "where"]
+      "keywords": [
+        "search",
+        "find",
+        "key",
+        "where"
+      ]
     },
     {
       "name": "manage-boards",
       "title": "My Boards",
       "description": "Browse and manage your keyboard profiles",
       "mode": "view",
-      "keywords": ["board", "keyboard", "manage", "switch"]
+      "keywords": [
+        "board",
+        "keyboard",
+        "manage",
+        "switch"
+      ]
     },
     {
       "name": "add-board",
       "title": "Add Board",
       "description": "Detect a keyboard over USB or import a keymap file",
       "mode": "view",
-      "keywords": ["add", "detect", "import", "usb", "vial", "zmk", "scan", "connect"]
+      "keywords": [
+        "add",
+        "detect",
+        "import",
+        "usb",
+        "vial",
+        "zmk",
+        "scan",
+        "connect"
+      ]
     },
     {
       "name": "quick-layer",
@@ -57,35 +82,63 @@
           "required": false
         }
       ],
-      "keywords": ["layer", "peek", "quick"]
+      "keywords": [
+        "layer",
+        "peek",
+        "quick"
+      ]
     },
     {
       "name": "import-github",
       "title": "Import from GitHub",
       "description": "Browse a public GitHub repo and import a keymap file",
       "mode": "view",
-      "keywords": ["github", "repo", "import", "remote", "zmk", "config"]
+      "keywords": [
+        "github",
+        "repo",
+        "import",
+        "remote",
+        "zmk",
+        "config"
+      ]
     },
     {
       "name": "board-settings",
       "title": "Board Settings",
       "description": "Configure QMK settings, RGB, and tap-hold timing on your Vial keyboard",
       "mode": "view",
-      "keywords": ["settings", "config", "rgb", "tapping", "vial", "qmk"]
+      "keywords": [
+        "settings",
+        "config",
+        "rgb",
+        "tapping",
+        "vial",
+        "qmk"
+      ]
     },
     {
       "name": "keypress-tester",
       "title": "Keypress Tester",
       "description": "Test which keys have been pressed on your keyboard",
       "mode": "view",
-      "keywords": ["test", "keypress", "switch", "matrix"]
+      "keywords": [
+        "test",
+        "keypress",
+        "switch",
+        "matrix"
+      ]
     },
     {
       "name": "layer-indicator",
       "title": "Layer Indicator",
       "description": "Menu bar indicator showing your active keyboard layer",
       "mode": "menu-bar",
-      "keywords": ["layer", "menu", "indicator", "status"],
+      "keywords": [
+        "layer",
+        "menu",
+        "indicator",
+        "status"
+      ],
       "interval": "10m"
     }
   ],
@@ -98,12 +151,30 @@
       "required": false,
       "default": "auto",
       "data": [
-        { "title": "Auto (System)", "value": "auto" },
-        { "title": "Minimal (Light)", "value": "minimal" },
-        { "title": "Catppuccin (Dark)", "value": "catppuccin" },
-        { "title": "Nord", "value": "nord" },
-        { "title": "Solarized", "value": "solarized" },
-        { "title": "High Contrast", "value": "highcontrast" }
+        {
+          "title": "Auto (System)",
+          "value": "auto"
+        },
+        {
+          "title": "Minimal (Light)",
+          "value": "minimal"
+        },
+        {
+          "title": "Catppuccin (Dark)",
+          "value": "catppuccin"
+        },
+        {
+          "title": "Nord",
+          "value": "nord"
+        },
+        {
+          "title": "Solarized",
+          "value": "solarized"
+        },
+        {
+          "title": "High Contrast",
+          "value": "highcontrast"
+        }
       ]
     },
     {
@@ -114,15 +185,25 @@
       "required": false,
       "default": "both",
       "data": [
-        { "title": "Both Halves", "value": "both" },
-        { "title": "Left Half", "value": "left" },
-        { "title": "Right Half", "value": "right" }
+        {
+          "title": "Both Halves",
+          "value": "both"
+        },
+        {
+          "title": "Left Half",
+          "value": "left"
+        },
+        {
+          "title": "Right Half",
+          "value": "right"
+        }
       ]
     }
   ],
   "dependencies": {
     "@raycast/api": "^1.104.11",
-    "@raycast/utils": "^1.17.0"
+    "@raycast/utils": "^1.17.0",
+    "koffi": "^2.15.2"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.0.4",

@@ -189,7 +189,45 @@ export function parseKeycode(raw: string): ParsedKeycode {
     return { label: `TT(${ttMatch[1]})`, holdLabel: `L${ttMatch[1]}`, category: "layer", raw: trimmed };
   }
 
-  // User keycodes: USER_0, USER_1, etc.
+  // PDF(n) — persistent default layer
+  const pdfMatch = trimmed.match(/^PDF\((\d+)\)$/);
+  if (pdfMatch) {
+    return { label: `PDF(${pdfMatch[1]})`, category: "layer", raw: trimmed };
+  }
+
+  // SH_T(kc) — swap hands tap
+  const shtMatch = trimmed.match(/^SH_T\(([^)]+)\)$/);
+  if (shtMatch) {
+    const innerKc = lookupKeycode(shtMatch[1]);
+    return { label: innerKc?.label ?? shtMatch[1].replace("KC_", ""), holdLabel: "Swap", category: "modifier", raw: trimmed };
+  }
+  if (trimmed === "SH_TOGG") return { label: "Swap", category: "modifier", raw: trimmed };
+
+  // TD(n) — tap dance
+  const tdMatch = trimmed.match(/^TD\((\d+)\)$/);
+  if (tdMatch) {
+    return { label: `TD${tdMatch[1]}`, category: "tapdance", raw: trimmed };
+  }
+
+  // M0–M127 — macros
+  const macroMatch = trimmed.match(/^M(\d+)$/);
+  if (macroMatch) {
+    return { label: `Macro ${macroMatch[1]}`, category: "macro", raw: trimmed };
+  }
+
+  // LM(layer, mod) — layer + mod
+  const lmMatch = trimmed.match(/^LM\((\d+),\s*([^)]+)\)$/);
+  if (lmMatch) {
+    return { label: `LM(${lmMatch[1]})`, holdLabel: lmMatch[2], category: "layer", raw: trimmed };
+  }
+
+  // KB_n — keyboard-specific keycodes (Vial's USER slots)
+  const kbMatch = trimmed.match(/^KB_(\d+)$/);
+  if (kbMatch) {
+    return { label: `User ${kbMatch[1]}`, category: "macro", raw: trimmed };
+  }
+
+  // USER_n — user keycodes
   const userMatch = trimmed.match(/^USER_(\d+)$/);
   if (userMatch) {
     return { label: `User ${userMatch[1]}`, category: "macro", raw: trimmed };

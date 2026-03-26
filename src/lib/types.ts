@@ -16,7 +16,7 @@ export interface BoardProfile {
   updatedAt: string;
 }
 
-export type FirmwareType = "qmk" | "zmk";
+export type FirmwareType = "qmk" | "zmk" | "via" | "vial";
 
 /** A single layer in a keymap */
 export interface Layer {

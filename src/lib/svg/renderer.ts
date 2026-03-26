@@ -27,6 +27,7 @@ function computeRenderHash(physicalLayout: PhysicalKey[], options: RenderOptions
     appearance: options.appearance,
     theme: options.theme,
     splitView: options.splitView,
+    rgbColors: options.rgbColors,
     highlightKeys: options.highlightKeys,
     showGhostKeys: options.showGhostKeys,
     ghostLayers: options.showGhostKeys
@@ -129,6 +130,7 @@ export function generateSvg(
         palette,
         isHighlighted: highlightSet.has(i),
         isGhost,
+        rgbColor: options.rgbColors?.[i],
         rotation: pos.rotation
           ? {
               angle: pos.rotation.angle,

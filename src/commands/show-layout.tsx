@@ -5,6 +5,8 @@ import { getActiveBoard } from "../lib/storage/active-board";
 import { getBoards } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
+import { computeKeyColors, RgbState } from "../lib/svg/rgb-effects";
+import { readBoardSettings } from "../lib/vial/client";
 import AddBoardCommand from "./add-board";
 
 interface Preferences {
@@ -22,6 +24,8 @@ export default function ShowLayoutCommand() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [noBoards, setNoBoards] = useState(false);
+  const [rgbEnabled, setRgbEnabled] = useState(false);
+  const [rgbState, setRgbState] = useState<RgbState | null>(null);
   const prefs = getPreferenceValues<Preferences>();
 
   useEffect(() => {
@@ -34,6 +38,22 @@ export default function ShowLayoutCommand() {
           return;
         }
         setBoard(active);
+
+        // Try to read RGB state if board is QMK/Vial
+        if (active.firmware === "qmk" || active.firmware === "vial") {
+          try {
+            const data = await readBoardSettings();
+            if (data.rgb) {
+              setRgbState({
+                mode: data.rgb.effect,
+                hue: data.rgb.hue,
+                saturation: data.rgb.saturation,
+                brightness: data.rgb.brightness,
+                speed: data.rgb.speed,
+              });
+            }
+          } catch { /* board not connected, that's ok */ }
+        }
       } catch {
         setNoBoards(true);
       } finally {
@@ -96,6 +116,12 @@ export default function ShowLayoutCommand() {
   }
 
   const appearance = environment.appearance;
+
+  // Compute RGB colors if enabled
+  const rgbColors = rgbEnabled && rgbState
+    ? computeKeyColors(rgbState, board.physicalLayout.map((k) => ({ x: k.x, y: k.y })))
+    : undefined;
+
   let markdown = "";
 
   if (showAll) {
@@ -167,6 +193,14 @@ export default function ShowLayoutCommand() {
           </ActionPanel.Section>
 
           <ActionPanel.Section title="View">
+            {rgbState && (
+              <Action
+                title={rgbEnabled ? "Hide RGB Effect" : "Show RGB Effect"}
+                icon={Icon.LightBulb}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "l" }}
+                onAction={() => setRgbEnabled(!rgbEnabled)}
+              />
+            )}
             <Action
               title={splitView === "both" ? "Show Left Half" : splitView === "left" ? "Show Right Half" : "Show Both Halves"}
               icon={splitView === "both" ? Icon.ArrowLeft : splitView === "left" ? Icon.ArrowRight : Icon.AppWindowGrid2x2}
@@ -203,7 +237,7 @@ export default function ShowLayoutCommand() {
                   return generateSvg(board.physicalLayout, {
                     appearance, theme: prefs.theme,
                     layerIndex: currentLayer, layers: board.layers,
-                    showGhostKeys: true, splitView,
+                    showGhostKeys: true, splitView, rgbColors,
                   }).filePath;
                 } catch { return ""; }
               })()}

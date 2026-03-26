@@ -94,6 +94,7 @@ export interface RenderOptions {
   layers: Layer[]; // Full layer stack (for ghost key resolution)
   width?: number; // Target width in pixels
   splitView?: "both" | "left" | "right"; // Which half(s) to render
+  rgbColors?: string[]; // Per-key RGB hex colors (from effect simulation)
 }
 
 /** Result of SVG generation */

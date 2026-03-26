@@ -15,13 +15,14 @@ interface KeyRenderParams {
   parsed: ParsedKeycode;
   palette: ColorPalette;
   isHighlighted: boolean;
-  isGhost: boolean; // Inherited from lower layer (50% opacity)
+  isGhost: boolean;
   rotation?: { angle: number; cx: number; cy: number };
+  rgbColor?: string; // Per-key RGB override (hex color or "none")
 }
 
 /** Render a single key as SVG elements */
 export function renderKey(params: KeyRenderParams): string {
-  const { x, y, width, height, parsed, palette, isHighlighted, isGhost, rotation } = params;
+  const { x, y, width, height, parsed, palette, isHighlighted, isGhost, rotation, rgbColor } = params;
   const lines: string[] = [];
 
   // Determine colors
@@ -33,6 +34,9 @@ export function renderKey(params: KeyRenderParams): string {
   let strokeColor = palette.keyStroke;
   let textColor = palette.keyText;
   let strokeDash = "";
+
+  // RGB lighting override — applies glow under the keycap
+  const hasRgb = rgbColor && rgbColor !== "none";
 
   if (isHighlighted) {
     capFill = palette.highlightFill;
@@ -57,21 +61,31 @@ export function renderKey(params: KeyRenderParams): string {
     : "";
   lines.push(`  <g${transform}>`);
 
-  // Key housing (outer rect)
+  // Key housing (outer rect) — RGB glow underneath
+  const housingFill = hasRgb ? rgbColor : palette.keyFill;
+  const housingStroke = hasRgb ? rgbColor : strokeColor;
   lines.push(
     `    <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${KEY_RADIUS}" ` +
-      `fill="${palette.keyFill}" stroke="${strokeColor}"${strokeDash} stroke-width="1"/>`,
+      `fill="${housingFill}" stroke="${housingStroke}"${strokeDash} stroke-width="1"/>`,
   );
 
-  // Keycap (inner rect — 3D effect)
+  // RGB underglow — soft glow behind the keycap
+  if (hasRgb) {
+    lines.push(
+      `    <rect x="${x + 1}" y="${y + 1}" width="${width - 2}" height="${height - 2}" rx="${KEY_RADIUS}" ` +
+        `fill="${rgbColor}" opacity="0.6" stroke="none"/>`,
+    );
+  }
+
+  // Keycap (inner rect — 3D effect, sits on top of the glow)
   if (!isGhost) {
     const capX = x + KEYCAP_INSET;
     const capY = y + KEYCAP_INSET;
     const capW = width - KEYCAP_INSET * 2;
-    const capH = height - KEYCAP_INSET * 2 - 1; // -1 for bottom shadow
+    const capH = height - KEYCAP_INSET * 2 - 1;
     lines.push(
       `    <rect x="${capX}" y="${capY}" width="${capW}" height="${capH}" rx="${KEY_RADIUS - 1}" ` +
-        `fill="${capFill}" stroke="none"/>`,
+        `fill="${capFill}" stroke="none" opacity="${hasRgb ? "0.85" : "1"}"/>`,
     );
   }
 

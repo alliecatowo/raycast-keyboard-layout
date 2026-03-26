@@ -25,9 +25,10 @@ function computeRenderHash(physicalLayout: PhysicalKey[], options: RenderOptions
     layerIndex: options.layerIndex,
     keycodes: options.layers[options.layerIndex]?.keycodes,
     appearance: options.appearance,
+    theme: options.theme,
+    splitView: options.splitView,
     highlightKeys: options.highlightKeys,
     showGhostKeys: options.showGhostKeys,
-    // Include ghost-source layers (all layers below current for ghost resolution)
     ghostLayers: options.showGhostKeys
       ? options.layers.slice(0, options.layerIndex).map((l) => l.keycodes)
       : undefined,

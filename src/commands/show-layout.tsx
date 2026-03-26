@@ -67,108 +67,80 @@ export default function ShowLayoutCommand() {
 
   const appearance = environment.appearance;
 
-  // Build markdown with ALL layers stacked, or just the focused one
+  // Show single layer (page mode) or all layers (stacked)
+  const showAll = focusLayer === null;
+  const currentLayer = focusLayer ?? 0;
   let markdown = "";
-  const layersToRender = focusLayer !== null ? [focusLayer] : board.layers.map((l) => l.index);
 
-  for (const layerIdx of layersToRender) {
-    const layer = board.layers[layerIdx];
-    if (!layer) continue;
-
+  if (showAll) {
+    // Stacked: render all layers with headers
+    for (const l of board.layers) {
+      try {
+        const result = generateSvg(board.physicalLayout, {
+          appearance, theme: prefs.theme,
+          layerIndex: l.index, layers: board.layers,
+          showGhostKeys: true, splitView,
+        });
+        markdown += `### ${l.name}\n\n![${l.name}](${result.filePath}?raycast-width=${result.width})\n\n`;
+      } catch (e) {
+        markdown += `### ${l.name}\n\n*Error: ${e instanceof Error ? e.message : "unknown"}*\n\n`;
+      }
+    }
+  } else {
+    // Single layer page mode
+    const layer = board.layers[currentLayer];
     try {
       const result = generateSvg(board.physicalLayout, {
-        appearance,
-        theme: prefs.theme,
-        layerIndex: layerIdx,
-        layers: board.layers,
-        showGhostKeys: true,
-        splitView,
+        appearance, theme: prefs.theme,
+        layerIndex: currentLayer, layers: board.layers,
+        showGhostKeys: true, splitView,
       });
-      if (focusLayer === null) {
-        // All layers mode — add layer name as header
-        markdown += `### ${layer.name}\n\n`;
-      }
-      markdown += `![${layer.name}](${result.filePath}?raycast-width=${result.width})\n\n`;
+      markdown = `![${layer?.name}](${result.filePath}?raycast-width=${result.width})`;
     } catch (e) {
-      markdown += `### ${layer.name}\n\n*Error rendering: ${e instanceof Error ? e.message : "unknown"}*\n\n`;
+      markdown = `*Error: ${e instanceof Error ? e.message : "unknown"}*`;
     }
   }
 
-  const navTitle = focusLayer !== null
-    ? `${board.name} — ${board.layers[focusLayer]?.name}`
-    : `${board.name} — All Layers`;
+  const layer = board.layers[currentLayer];
+  const navTitle = showAll
+    ? `${board.name} — All Layers`
+    : `${board.name} — ${layer?.name} (${currentLayer + 1}/${board.layers.length})`;
 
   return (
     <Detail
       navigationTitle={navTitle}
       markdown={markdown}
       isLoading={isLoading}
-      metadata={
-        <Detail.Metadata>
-          <Detail.Metadata.Label title="Board" text={board.name} />
-          <Detail.Metadata.Label title="Keyboard" text={board.keyboard} />
-          <Detail.Metadata.Label
-            title="View"
-            text={focusLayer !== null ? `${board.layers[focusLayer]?.name} (${focusLayer + 1}/${board.layers.length})` : `All ${board.layers.length} layers`}
-          />
-          <Detail.Metadata.Separator />
-          <Detail.Metadata.TagList title="Layers">
-            {board.layers.map((l) => (
-              <Detail.Metadata.TagList.Item
-                key={l.index}
-                text={l.name}
-                color={focusLayer === l.index ? "#007AFF" : undefined}
-              />
-            ))}
-          </Detail.Metadata.TagList>
-          <Detail.Metadata.Separator />
-          <Detail.Metadata.Label title="Firmware" text={board.firmware.toUpperCase()} />
-          <Detail.Metadata.Label title="Layout" text={board.layoutKey} />
-        </Detail.Metadata>
-      }
       actions={
         <ActionPanel>
-          <ActionPanel.Section title="View">
+          <ActionPanel.Section title="Layers">
             <Action
-              title="Show All Layers"
-              icon={Icon.List}
+              title={showAll ? "Focus Base Layer" : "Show All Layers"}
+              icon={showAll ? Icon.Window : Icon.List}
               shortcut={{ modifiers: ["cmd"], key: "0" }}
-              onAction={() => setFocusLayer(null)}
+              onAction={() => setFocusLayer(showAll ? 0 : null)}
             />
-            {board.layers.map((l) => (
-              <Action
-                key={l.index}
-                title={`Focus ${l.name}`}
-                shortcut={{ modifiers: ["cmd"], key: String(l.index + 1) as "1" }}
-                onAction={() => setFocusLayer(l.index)}
-              />
-            ))}
-          </ActionPanel.Section>
-          <ActionPanel.Section title="Navigate">
             <Action
               title="Next Layer"
               shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() => {
-                if (focusLayer === null) {
-                  setFocusLayer(0);
-                } else {
-                  setFocusLayer(Math.min(focusLayer + 1, board.layers.length - 1));
-                }
-              }}
+              onAction={() => setFocusLayer(Math.min((focusLayer ?? -1) + 1, board.layers.length - 1))}
             />
             <Action
               title="Previous Layer"
               shortcut={{ modifiers: ["cmd"], key: "[" }}
               onAction={() => {
-                if (focusLayer === null) {
-                  setFocusLayer(board.layers.length - 1);
-                } else if (focusLayer === 0) {
-                  setFocusLayer(null);
-                } else {
-                  setFocusLayer(focusLayer - 1);
-                }
+                if (focusLayer === null || focusLayer === 0) setFocusLayer(null);
+                else setFocusLayer(focusLayer - 1);
               }}
             />
+            {board.layers.map((l) => (
+              <Action
+                key={l.index}
+                title={l.name}
+                shortcut={{ modifiers: ["cmd"], key: String(l.index + 1) as "1" }}
+                onAction={() => setFocusLayer(l.index)}
+              />
+            ))}
           </ActionPanel.Section>
           {allBoards.length > 1 && (
             <ActionPanel.Section title="Switch Board">
@@ -218,7 +190,7 @@ export default function ShowLayoutCommand() {
                   return generateSvg(board.physicalLayout, {
                     appearance,
                     theme: prefs.theme,
-                    layerIndex: focusLayer ?? 0,
+                    layerIndex: currentLayer,
                     layers: board.layers,
                     showGhostKeys: true,
                     splitView,

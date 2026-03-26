@@ -1,21 +1,13 @@
 import { Action, ActionPanel, Icon, List, showToast, Toast, useNavigation } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { detectAllDevices, readVialKeyboard, readZmkKeyboard } from "../lib/vial/client";
+import { detectAll, getAdapterForDevice, type DetectedDevice as FwDevice } from "../lib/firmware";
 import { saveBoard } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import BoardDetailView from "./board-detail-view";
 import ImportKeymapCommand from "./import-keymap";
 import ImportGitHubCommand from "./import-github";
 
-interface DetectedDevice {
-  path: string;
-  name?: string;
-  manufacturer: string;
-  product: string;
-  firmware?: string;
-  vendorId: number | string;
-  productId: number | string;
-}
+type DetectedDevice = FwDevice & { product?: string };
 
 export default function AddBoardCommand() {
   const { push } = useNavigation();
@@ -26,7 +18,7 @@ export default function AddBoardCommand() {
   async function scan() {
     setIsScanning(true);
     try {
-      const found = await detectAllDevices();
+      const found = await detectAll();
       setDevices(found);
     } catch {
       // Silent fail — just show empty list with import option
@@ -41,7 +33,7 @@ export default function AddBoardCommand() {
 
   async function handleReadBoard(device: DetectedDevice) {
     setIsReading(true);
-    const isZmk = device.firmware === "zmk";
+    const adapter = getAdapterForDevice(device);
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Reading keyboard...",
@@ -49,9 +41,8 @@ export default function AddBoardCommand() {
     });
 
     try {
-      const board = isZmk
-        ? await readZmkKeyboard(device.path)
-        : await readVialKeyboard(device.path);
+      if (!adapter) throw new Error(`No adapter for firmware: ${device.firmware}`);
+      const board = await adapter.readBoard(device);
 
       await saveBoard(board);
       await setActiveBoardId(board.id);
@@ -83,8 +74,8 @@ export default function AddBoardCommand() {
             <List.Item
               key={device.path}
               icon={Icon.Keyboard}
-              title={device.name || device.product}
-              subtitle={device.firmware?.toUpperCase() || ""}
+              title={device.name || device.product || "Keyboard"}
+              subtitle={device.firmware.toUpperCase()}
               accessories={[{ text: device.manufacturer }]}
               actions={
                 <ActionPanel>

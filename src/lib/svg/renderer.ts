@@ -36,11 +36,6 @@ function computeRenderHash(physicalLayout: PhysicalKey[], options: RenderOptions
   return crypto.createHash("md5").update(data).digest("hex").slice(0, 12);
 }
 
-/** Escape XML special characters */
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
 /**
  * Generate an SVG visualization of a keyboard layer.
  * Returns cached result if inputs haven't changed.
@@ -100,22 +95,10 @@ export function generateSvg(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}">`,
   );
 
-  // Background
-  lines.push(`  <rect width="100%" height="100%" fill="${palette.background}" rx="12"/>`);
+  // Transparent background — let Raycast's native UI show through
+  // (layer name is shown in Raycast's navigationTitle, not in the SVG)
 
-  // Layer name header
-  const headerY = SVG_PADDING;
-  const layerName = layer.name || `Layer ${layer.index}`;
-  lines.push(
-    `  <rect x="${SVG_PADDING}" y="${headerY}" width="${totalWidth - SVG_PADDING * 2}" height="${HEADER_HEIGHT - 8}" rx="6" fill="${palette.headerBg}"/>`,
-  );
-  lines.push(
-    `  <text x="${totalWidth / 2}" y="${headerY + (HEADER_HEIGHT - 8) / 2}" text-anchor="middle" dominant-baseline="central" ` +
-      `font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="600" ` +
-      `fill="${palette.headerText}">${esc(layerName)}</text>`,
-  );
-
-  // Keys
+  // Keys (no header offset since HEADER_HEIGHT = 0)
   const keysOffsetY = HEADER_HEIGHT;
 
   for (let i = 0; i < renderLayout.length; i++) {

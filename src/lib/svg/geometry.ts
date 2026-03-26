@@ -13,13 +13,13 @@ export const KEY_RADIUS = 7;
 export const KEYCAP_INSET = 3;
 
 /** Padding around the entire SVG */
-export const SVG_PADDING = 14;
+export const SVG_PADDING = 10;
 
 /** Extra gap to insert between split keyboard halves */
-export const SPLIT_GAP = 16;
+export const SPLIT_GAP = 10;
 
-/** Header height for layer name */
-export const HEADER_HEIGHT = 34;
+/** Header height for layer name (0 = no header in SVG) */
+export const HEADER_HEIGHT = 0;
 
 /** Convert key units to pixels */
 export function toPixels(units: number): number {

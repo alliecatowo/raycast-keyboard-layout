@@ -3,14 +3,15 @@ import { useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { generateSvg } from "../lib/svg/renderer";
 import { getFirmwareConfig } from "../lib/firmware/config";
-import ImportKeymapCommand from "./import-keymap";
+import AddBoardCommand from "./add-board";
 
 export default function BoardDetailView({ board }: { board: BoardProfile }) {
   const [layerIndex, setLayerIndex] = useState(0);
   const appearance = environment.appearance;
   const layer = board.layers[layerIndex];
+  const fwConfig = getFirmwareConfig(board.firmware);
 
-  let markdown = "";
+  let markdown = `### ${layer?.name}\n\n`;
   try {
     const result = generateSvg(board.physicalLayout, {
       appearance,
@@ -18,48 +19,45 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
       layers: board.layers,
       showGhostKeys: true,
     });
-    markdown = `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${result.width})`;
+    markdown += `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${result.width})`;
   } catch (e) {
-    markdown = `# Error\n\n${e instanceof Error ? e.message : "Could not render layout"}`;
+    markdown += `*Error: ${e instanceof Error ? e.message : "Could not render layout"}*`;
   }
+
+  const navTitle = `${board.name} — ${layer?.name} (${layerIndex + 1}/${board.layers.length})`;
 
   return (
     <Detail
-      navigationTitle={`${board.name} — ${layer?.name ?? `Layer ${layerIndex}`}`}
+      navigationTitle={navTitle}
       markdown={markdown}
-      metadata={
-        <Detail.Metadata>
-          <Detail.Metadata.Label title="Board" text={board.name} />
-          <Detail.Metadata.Label title="Keyboard" text={board.keyboard} />
-          <Detail.Metadata.Label
-            title="Current Layer"
-            text={`${layer?.name} (${layerIndex + 1}/${board.layers.length})`}
-          />
-          <Detail.Metadata.Separator />
-          <Detail.Metadata.TagList title="Layers">
-            {board.layers.map((l) => (
-              <Detail.Metadata.TagList.Item
-                key={l.index}
-                text={l.name}
-                color={l.index === layerIndex ? "#007AFF" : undefined}
-              />
-            ))}
-          </Detail.Metadata.TagList>
-          <Detail.Metadata.Separator />
-          <Detail.Metadata.Label
-            title="Firmware"
-            text={board.firmware.toUpperCase()}
-          />
-          <Detail.Metadata.Label title="Layout" text={board.layoutKey} />
-        </Detail.Metadata>
-      }
       actions={
         <ActionPanel>
-          <ActionPanel.Section title="Layers">
+          <Action
+            title="Next Layer →"
+            icon={Icon.ChevronRight}
+            onAction={() => setLayerIndex((i) => (i + 1) % board.layers.length)}
+          />
+          <Action
+            title="← Previous Layer"
+            icon={Icon.ChevronLeft}
+            shortcut={{ modifiers: ["cmd"], key: "[" }}
+            onAction={() =>
+              setLayerIndex(
+                (i) => (i - 1 + board.layers.length) % board.layers.length,
+              )
+            }
+          />
+          <Action
+            title="Next Layer →"
+            shortcut={{ modifiers: ["cmd"], key: "]" }}
+            onAction={() => setLayerIndex((i) => (i + 1) % board.layers.length)}
+          />
+
+          <ActionPanel.Section title="Jump to Layer">
             {board.layers.map((l) => (
               <Action
                 key={l.index}
-                title={`Show ${l.name}`}
+                title={`${l.name}${l.index === layerIndex ? " ●" : ""}`}
                 shortcut={{
                   modifiers: ["cmd"],
                   key: String(l.index + 1) as "1",
@@ -68,46 +66,17 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
               />
             ))}
           </ActionPanel.Section>
-          <ActionPanel.Section title="Navigate">
-            <Action
-              title="Next Layer"
-              shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() =>
-                setLayerIndex((i) => Math.min(i + 1, board.layers.length - 1))
-              }
-            />
-            <Action
-              title="Previous Layer"
-              shortcut={{ modifiers: ["cmd"], key: "[" }}
-              onAction={() => setLayerIndex((i) => Math.max(i - 1, 0))}
-            />
-          </ActionPanel.Section>
-          <ActionPanel.Section title="Actions">
+
+          <ActionPanel.Section>
             <Action.Push
-              title="Import New Board"
+              title="Add Board"
               icon={Icon.Plus}
-              target={<ImportKeymapCommand />}
+              target={<AddBoardCommand />}
               shortcut={{ modifiers: ["cmd"], key: "n" }}
             />
-            <Action.CopyToClipboard
-              title="Copy Layer SVG"
-              shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-              content={(() => {
-                try {
-                  return generateSvg(board.physicalLayout, {
-                    appearance,
-                    layerIndex,
-                    layers: board.layers,
-                    showGhostKeys: true,
-                  }).svg;
-                } catch {
-                  return "";
-                }
-              })()}
-            />
             <Action.OpenInBrowser
-              title={getFirmwareConfig(board.firmware).configuratorLabel}
-              url={getFirmwareConfig(board.firmware).configuratorUrl}
+              title={fwConfig.configuratorLabel}
+              url={fwConfig.configuratorUrl}
               shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
             />
           </ActionPanel.Section>

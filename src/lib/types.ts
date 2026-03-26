@@ -12,6 +12,7 @@ export interface BoardProfile {
   layers: Layer[];
   physicalLayout: PhysicalKey[];
   sourceFile?: string; // Original import path for re-import
+  devicePath?: string; // USB device path for reconnection (HID path or serial port)
   createdAt: string; // ISO date
   updatedAt: string;
 }

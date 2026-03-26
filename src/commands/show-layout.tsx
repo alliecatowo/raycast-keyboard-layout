@@ -317,6 +317,23 @@ export default function ShowLayoutCommand() {
           )}
 
           <ActionPanel.Section>
+            {board.devicePath && (
+              <Action
+                title="Refresh from Board"
+                icon={Icon.ArrowClockwise}
+                shortcut={{ modifiers: ["cmd"], key: "r" }}
+                onAction={async () => {
+                  try {
+                    const updated = await readVialKeyboard(board.devicePath);
+                    updated.id = board.id;
+                    updated.name = board.name;
+                    setBoard(updated);
+                  } catch {
+                    // Board disconnected
+                  }
+                }}
+              />
+            )}
             <Action.Push
               title="Add Board"
               icon={Icon.Plus}

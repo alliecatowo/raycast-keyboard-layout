@@ -302,6 +302,7 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
     firmware: "zmk",
     layers,
     physicalLayout: result.physicalLayout,
+    devicePath: portPath,
     createdAt: now,
     updatedAt: now,
   };
@@ -514,6 +515,7 @@ export async function readVialKeyboard(
     firmware: "qmk",
     layers,
     physicalLayout: result.physicalLayout,
+    devicePath,
     createdAt: now,
     updatedAt: now,
   };

@@ -19,7 +19,7 @@ import {
 } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import { getFirmwareConfig } from "../lib/firmware/config";
-import ImportKeymapCommand from "./import-keymap";
+import AddBoardCommand from "./add-board";
 import BoardDetailView from "./board-detail-view";
 
 export default function ManageBoardsCommand() {
@@ -90,9 +90,9 @@ export default function ManageBoardsCommand() {
           actions={
             <ActionPanel>
               <Action.Push
-                title="Import Keymap"
+                title="Add Board"
                 icon={Icon.Plus}
-                target={<ImportKeymapCommand />}
+                target={<AddBoardCommand />}
               />
             </ActionPanel>
           }
@@ -129,9 +129,9 @@ export default function ManageBoardsCommand() {
                     />
                   )}
                   <Action.Push
-                    title="Import New Board"
+                    title="Add Board"
                     icon={Icon.Plus}
-                    target={<ImportKeymapCommand />}
+                    target={<AddBoardCommand />}
                     shortcut={{ modifiers: ["cmd"], key: "n" }}
                   />
                   <Action.OpenInBrowser

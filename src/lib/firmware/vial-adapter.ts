@@ -1,11 +1,10 @@
+/**
+ * Vial adapter — full in-process implementation via koffi HID transport.
+ */
+
 import { BoardProfile } from "../types";
-import {
-  detectVialDevices,
-  readVialKeyboard,
-  readLockStatus,
-  readKeymapHash,
-  readMatrixState,
-} from "../vial/client";
+import { vialHidTransport } from "../transport";
+import { readVialBoard } from "../protocol/vial";
 import { DetectedDevice, FirmwareAdapter } from "./adapter";
 
 export class VialAdapter implements FirmwareAdapter {
@@ -13,32 +12,32 @@ export class VialAdapter implements FirmwareAdapter {
   readonly displayName = "Vial (QMK)";
 
   async detectDevices(): Promise<DetectedDevice[]> {
-    const devices = await detectVialDevices();
-    return devices.map((d) => ({
-      path: d.path,
-      name: d.product || "Vial Keyboard",
-      manufacturer: d.manufacturer || "Unknown",
-      firmware: "qmk" as const,
-      vendorId: String(d.vendorId),
-      productId: String(d.productId),
-      serialNumber: d.serialNumber,
-      transport: "hid" as const,
-    }));
+    try {
+      const devices = await vialHidTransport.discover();
+      return devices.map((d) => ({
+        path: d.path,
+        name: d.name,
+        manufacturer: d.manufacturer || "Unknown",
+        firmware: "qmk" as const,
+        vendorId: d.vendorId || "",
+        productId: d.productId || "",
+        serialNumber: d.serialNumber,
+        transport: "hid" as const,
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async readBoard(device: DetectedDevice): Promise<BoardProfile> {
-    return readVialKeyboard(device.path);
-  }
-
-  async getLockStatus() {
-    return readLockStatus();
-  }
-
-  async getKeymapHash() {
-    return readKeymapHash();
-  }
-
-  async getMatrixState() {
-    return readMatrixState();
+    const conn = vialHidTransport.connect({
+      ...device,
+      transportType: "hid",
+    });
+    try {
+      return readVialBoard(conn);
+    } finally {
+      conn.close();
+    }
   }
 }

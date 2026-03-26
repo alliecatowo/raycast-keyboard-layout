@@ -4,7 +4,7 @@ import { BoardProfile } from "../lib/types";
 import { getActiveBoard } from "../lib/storage/active-board";
 import { getBoards } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
-import { readMatrixState } from "../lib/vial/client";
+import { readMatrixState } from "../lib/protocol";
 import { getLayerKeys } from "../lib/layer-detect";
 import { getFirmwareConfig } from "../lib/firmware/config";
 

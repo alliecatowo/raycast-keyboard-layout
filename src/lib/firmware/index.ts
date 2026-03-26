@@ -10,7 +10,7 @@ export type { DetectedDevice, FirmwareAdapter } from "./adapter";
 export { VialAdapter } from "./vial-adapter";
 export { ZmkAdapter } from "./zmk-adapter";
 
-// Register all adapters
+// Register adapters — both use the koffi-based transport layer
 registerAdapter(new VialAdapter());
 registerAdapter(new ZmkAdapter());
 

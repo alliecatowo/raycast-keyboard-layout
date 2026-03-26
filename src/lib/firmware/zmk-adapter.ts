@@ -1,10 +1,16 @@
+/**
+ * ZMK adapter — uses serial transport for USB, BLE transport for wireless.
+ * Probes serial ports for ZMK Studio boards using the protobuf protocol.
+ */
+
 import { BoardProfile } from "../types";
+import { zmkSerialTransport } from "../transport";
 import {
-  detectZmkDevices,
-  readZmkKeyboard,
-  readZmkLockStatus,
-  writeZmkLayerName,
-} from "../vial/client";
+  getDeviceInfo,
+  readZmkBoard,
+  getLockState,
+  setLayerName,
+} from "../protocol/zmk-studio";
 import { DetectedDevice, FirmwareAdapter } from "./adapter";
 
 export class ZmkAdapter implements FirmwareAdapter {
@@ -12,28 +18,72 @@ export class ZmkAdapter implements FirmwareAdapter {
   readonly displayName = "ZMK Studio";
 
   async detectDevices(): Promise<DetectedDevice[]> {
-    const devices = await detectZmkDevices();
-    return devices.map((d) => ({
-      path: d.path,
-      name: d.product || "ZMK Keyboard",
-      manufacturer: d.manufacturer || "Unknown",
-      firmware: "zmk" as const,
-      vendorId: String(d.vendorId),
-      productId: String(d.productId),
-      serialNumber: d.serialNumber,
-      transport: "serial" as const,
-    }));
+    const candidates = await zmkSerialTransport.discover();
+    const devices: DetectedDevice[] = [];
+
+    for (const candidate of candidates) {
+      try {
+        const conn = zmkSerialTransport.connect(candidate);
+        try {
+          const info = getDeviceInfo(conn);
+          devices.push({
+            path: candidate.path,
+            name: info.name,
+            manufacturer: "ZMK",
+            firmware: "zmk" as const,
+            vendorId: "",
+            productId: "",
+            serialNumber: info.serialNumber,
+            transport: "serial" as const,
+          });
+        } finally {
+          conn.close();
+        }
+      } catch {
+        // Not a ZMK Studio board — skip
+      }
+    }
+
+    return devices;
   }
 
   async readBoard(device: DetectedDevice): Promise<BoardProfile> {
-    return readZmkKeyboard(device.path);
+    const conn = zmkSerialTransport.connect({
+      ...device,
+      transportType: "serial",
+    });
+    try {
+      return readZmkBoard(conn);
+    } finally {
+      conn.close();
+    }
   }
 
-  async getLockStatus(portPath: string) {
-    return readZmkLockStatus(portPath);
+  async getLockStatus(device: DetectedDevice): Promise<boolean> {
+    const conn = zmkSerialTransport.connect({
+      ...device,
+      transportType: "serial",
+    });
+    try {
+      return getLockState(conn);
+    } finally {
+      conn.close();
+    }
   }
 
-  async setLayerName(portPath: string, layerId: number, name: string) {
-    return writeZmkLayerName(portPath, layerId, name);
+  async setLayerName(
+    device: DetectedDevice,
+    layerId: number,
+    name: string,
+  ): Promise<void> {
+    const conn = zmkSerialTransport.connect({
+      ...device,
+      transportType: "serial",
+    });
+    try {
+      setLayerName(conn, layerId, name);
+    } finally {
+      conn.close();
+    }
   }
 }

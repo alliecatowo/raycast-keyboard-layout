@@ -143,14 +143,24 @@ describe("renderKey", () => {
 
   it("adjusts font size for long labels", () => {
     const short = renderKey({
-      x: 10, y: 10, width: 50, height: 50,
+      x: 10,
+      y: 10,
+      width: 50,
+      height: 50,
       parsed: parseKeycode("KC_A"),
-      palette, isHighlighted: false, isGhost: false,
+      palette,
+      isHighlighted: false,
+      isGhost: false,
     });
     const long = renderKey({
-      x: 10, y: 10, width: 50, height: 50,
+      x: 10,
+      y: 10,
+      width: 50,
+      height: 50,
       parsed: parseKeycode("KC_PSCR"),
-      palette, isHighlighted: false, isGhost: false,
+      palette,
+      isHighlighted: false,
+      isGhost: false,
     });
     // Short label gets bigger font
     expect(short).toContain('font-size="17"');

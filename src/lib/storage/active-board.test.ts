@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { __resetMockStorage, LocalStorage } from "../../__mocks__/@raycast/api";
+import { __resetMockStorage } from "../../__mocks__/@raycast/api";
 import {
   getActiveBoardId,
   setActiveBoardId,

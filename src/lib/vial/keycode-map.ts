@@ -1,3 +1,5 @@
+import { VIAL_NUMERIC } from "../keymap/vendored-keycodes";
+
 /**
  * Maps QMK numeric keycodes (as received from Vial USB) to their string names.
  *
@@ -269,6 +271,10 @@ export function numericKeycodeToString(keycode: number): string {
     return `USER_${keycode - 0x7e40}`;
   }
 
-  // Fallback
+  // Vendored fallback: check the full Vial keycode database
+  const vendored = VIAL_NUMERIC[keycode];
+  if (vendored) return vendored;
+
+  // Last resort: hex
   return `0x${keycode.toString(16).toUpperCase().padStart(4, "0")}`;
 }

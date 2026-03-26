@@ -1,5 +1,6 @@
 import { KeyCategory, KeycodeDefinition } from "../types";
 import { KEYCODES } from "./keycodes-data";
+import { VIAL_LABELS } from "./vendored-keycodes";
 
 // ── Lookup indices (built once at import time) ───────────
 
@@ -280,10 +281,16 @@ export function parseKeycode(raw: string): ParsedKeycode {
   if (trimmed === "DB_TOGG") return { label: "Debug", category: "system", raw: trimmed };
   if (trimmed === "EE_CLR") return { label: "EEClr", category: "system", raw: trimmed };
 
-  // Simple keycode lookup
+  // Simple keycode lookup (hand-maintained DB)
   const kc = lookupKeycode(trimmed);
   if (kc) {
     return { label: kc.label, category: kc.category, raw: trimmed };
+  }
+
+  // Vendored Vial label database (540+ entries)
+  const vialLabel = VIAL_LABELS[trimmed];
+  if (vialLabel) {
+    return { label: vialLabel, category: "alpha", raw: trimmed };
   }
 
   // Unknown: strip KC_ prefix and display as-is

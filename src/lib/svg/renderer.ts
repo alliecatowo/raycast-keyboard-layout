@@ -8,7 +8,6 @@ import { getPalette, ThemeId } from "./colors";
 import {
   computeBoundingBox,
   detectSplitPoint,
-  HEADER_HEIGHT,
   keyToPixels,
   SVG_PADDING,
 } from "./geometry";
@@ -83,7 +82,7 @@ export function generateSvg(
   const bbox = computeBoundingBox(renderLayout, renderSplitX);
 
   const totalWidth = bbox.width + SVG_PADDING * 2;
-  const totalHeight = bbox.height + SVG_PADDING * 2 + HEADER_HEIGHT;
+  const totalHeight = bbox.height + SVG_PADDING * 2;
 
   const highlightSet = new Set(options.highlightKeys ?? []);
   const showGhost = options.showGhostKeys ?? true;
@@ -95,11 +94,8 @@ export function generateSvg(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}">`,
   );
 
-  // Transparent background — let Raycast's native UI show through
-  // (layer name is shown in Raycast's navigationTitle, not in the SVG)
-
-  // Keys (no header offset since HEADER_HEIGHT = 0)
-  const keysOffsetY = HEADER_HEIGHT;
+  // No background, no header — SVG is transparent, layer name in Raycast's nav
+  const keysOffsetY = 0;
 
   for (let i = 0; i < renderLayout.length; i++) {
     const physKey = renderLayout[i];

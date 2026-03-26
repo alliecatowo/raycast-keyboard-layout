@@ -15,8 +15,8 @@ interface Preferences {
 export default function ShowLayoutCommand() {
   const [board, setBoard] = useState<BoardProfile | undefined>();
   const [allBoards, setAllBoards] = useState<BoardProfile[]>([]);
-  // Start on layer 0 (single layer page view) — NOT the "all layers" stacked view
   const [currentLayer, setCurrentLayer] = useState(0);
+  const [showAll, setShowAll] = useState(false);
   const [splitView, setSplitView] = useState<"both" | "left" | "right">(
     (getPreferenceValues<Preferences>().defaultView as "both" | "left" | "right") || "both",
   );
@@ -67,32 +67,47 @@ export default function ShowLayoutCommand() {
   }
 
   function nextLayer() {
+    setShowAll(false);
     setCurrentLayer((i) => (i + 1) % board.layers.length);
   }
 
   function prevLayer() {
+    setShowAll(false);
     setCurrentLayer((i) => (i - 1 + board.layers.length) % board.layers.length);
   }
 
   const appearance = environment.appearance;
-  const layer = board.layers[currentLayer];
-
   let markdown = "";
-  try {
-    const result = generateSvg(board.physicalLayout, {
-      appearance,
-      theme: prefs.theme,
-      layerIndex: currentLayer,
-      layers: board.layers,
-      showGhostKeys: true,
-      splitView,
-    });
-    markdown = `![${layer?.name}](${result.filePath}?raycast-width=${result.width})`;
-  } catch (e) {
-    markdown = `*Error: ${e instanceof Error ? e.message : "unknown"}*`;
+
+  if (showAll) {
+    for (const l of board.layers) {
+      try {
+        const result = generateSvg(board.physicalLayout, {
+          appearance, theme: prefs.theme, layerIndex: l.index,
+          layers: board.layers, showGhostKeys: true, splitView,
+        });
+        markdown += `### ${l.name}\n\n![${l.name}](${result.filePath}?raycast-width=${result.width})\n\n`;
+      } catch (e) {
+        markdown += `### ${l.name}\n\n*Error: ${e instanceof Error ? e.message : "unknown"}*\n\n`;
+      }
+    }
+  } else {
+    const layer = board.layers[currentLayer];
+    try {
+      const result = generateSvg(board.physicalLayout, {
+        appearance, theme: prefs.theme, layerIndex: currentLayer,
+        layers: board.layers, showGhostKeys: true, splitView,
+      });
+      markdown = `### ${layer?.name}\n\n![${layer?.name}](${result.filePath}?raycast-width=${result.width})`;
+    } catch (e) {
+      markdown = `*Error: ${e instanceof Error ? e.message : "unknown"}*`;
+    }
   }
 
-  const navTitle = `${board.name} — ${layer?.name} (${currentLayer + 1}/${board.layers.length})`;
+  const layer = board.layers[currentLayer];
+  const navTitle = showAll
+    ? `${board.name} — All Layers`
+    : `${board.name} — ${layer?.name} (${currentLayer + 1}/${board.layers.length})`;
 
   return (
     <Detail
@@ -116,12 +131,18 @@ export default function ShowLayoutCommand() {
           />
 
           <ActionPanel.Section title="Jump to Layer">
+            <Action
+              title={showAll ? "Exit All Layers View" : "Show All Layers"}
+              icon={Icon.List}
+              shortcut={{ modifiers: ["cmd"], key: "0" }}
+              onAction={() => setShowAll(!showAll)}
+            />
             {board.layers.map((l) => (
               <Action
                 key={l.index}
-                title={`${l.name}${l.index === currentLayer ? " ●" : ""}`}
+                title={`${l.name}${!showAll && l.index === currentLayer ? " ●" : ""}`}
                 shortcut={{ modifiers: ["cmd"], key: String(l.index + 1) as "1" }}
-                onAction={() => setCurrentLayer(l.index)}
+                onAction={() => { setShowAll(false); setCurrentLayer(l.index); }}
               />
             ))}
           </ActionPanel.Section>

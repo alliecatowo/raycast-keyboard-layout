@@ -1,6 +1,18 @@
-import { Action, ActionPanel, Icon, List, showToast, Toast, useNavigation } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Icon,
+  List,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
-import { detectAll, getAdapterForDevice, type DetectedDevice as FwDevice } from "../lib/firmware";
+import {
+  detectAll,
+  getAdapterForDevice,
+  type DetectedDevice as FwDevice,
+} from "../lib/firmware";
 import { saveBoard } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import BoardDetailView from "./board-detail-view";
@@ -41,14 +53,19 @@ export default function AddBoardCommand() {
     });
 
     try {
-      if (!adapter) throw new Error(`No adapter for firmware: ${device.firmware}`);
+      if (!adapter)
+        throw new Error(`No adapter for firmware: ${device.firmware}`);
       const board = await adapter.readBoard(device);
 
       await saveBoard(board);
       await setActiveBoardId(board.id);
 
       toast.hide();
-      await showToast({ style: Toast.Style.Success, title: "Board added!", message: board.name });
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Board added!",
+        message: board.name,
+      });
       push(<BoardDetailView board={board} />);
     } catch (e) {
       toast.hide();
@@ -69,7 +86,10 @@ export default function AddBoardCommand() {
       searchBarPlaceholder="Scanning for keyboards..."
     >
       {devices.length > 0 && (
-        <List.Section title="Detected Keyboards" subtitle="Plug in your board and press Enter">
+        <List.Section
+          title="Detected Keyboards"
+          subtitle="Plug in your board and press Enter"
+        >
           {devices.map((device) => (
             <List.Item
               key={device.path}
@@ -84,7 +104,11 @@ export default function AddBoardCommand() {
                     icon={Icon.Download}
                     onAction={() => handleReadBoard(device)}
                   />
-                  <Action title="Scan Again" icon={Icon.ArrowClockwise} onAction={scan} />
+                  <Action
+                    title="Scan Again"
+                    icon={Icon.ArrowClockwise}
+                    onAction={scan}
+                  />
                 </ActionPanel>
               }
             />
@@ -104,21 +128,31 @@ export default function AddBoardCommand() {
             title="Scan Again"
             actions={
               <ActionPanel>
-                <Action title="Scan" icon={Icon.ArrowClockwise} onAction={scan} />
+                <Action
+                  title="Scan"
+                  icon={Icon.ArrowClockwise}
+                  onAction={scan}
+                />
               </ActionPanel>
             }
           />
         </List.Section>
       )}
 
-      <List.Section title={devices.length > 0 ? "Other Options" : "Import Instead"}>
+      <List.Section
+        title={devices.length > 0 ? "Other Options" : "Import Instead"}
+      >
         <List.Item
           icon={Icon.Document}
           title="Import from File"
           subtitle="QMK keymap.json or ZMK .keymap"
           actions={
             <ActionPanel>
-              <Action.Push title="Import File" icon={Icon.Document} target={<ImportKeymapCommand />} />
+              <Action.Push
+                title="Import File"
+                icon={Icon.Document}
+                target={<ImportKeymapCommand />}
+              />
             </ActionPanel>
           }
         />
@@ -128,7 +162,11 @@ export default function AddBoardCommand() {
           subtitle="Browse a public repo for your keymap"
           actions={
             <ActionPanel>
-              <Action.Push title="Import from GitHub" icon={Icon.Globe} target={<ImportGitHubCommand />} />
+              <Action.Push
+                title="Import from GitHub"
+                icon={Icon.Globe}
+                target={<ImportGitHubCommand />}
+              />
             </ActionPanel>
           }
         />

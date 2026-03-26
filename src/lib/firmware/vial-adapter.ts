@@ -1,5 +1,11 @@
 import { BoardProfile } from "../types";
-import { detectVialDevices, readVialKeyboard, readLockStatus, readKeymapHash, readMatrixState } from "../vial/client";
+import {
+  detectVialDevices,
+  readVialKeyboard,
+  readLockStatus,
+  readKeymapHash,
+  readMatrixState,
+} from "../vial/client";
 import { DetectedDevice, FirmwareAdapter } from "./adapter";
 
 export class VialAdapter implements FirmwareAdapter {

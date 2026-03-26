@@ -19,7 +19,13 @@ function getHelperPath(): string {
     // Dev mode: resolve from extension source path
     path.join(environment.assetsPath, "..", "helper", "vial-reader.js"),
     // Source directory (hardcoded for dev — will be configurable later)
-    path.join(process.env.HOME || "~", "Develop", "raycast-keyboard-layout", "helper", "vial-reader.js"),
+    path.join(
+      process.env.HOME || "~",
+      "Develop",
+      "raycast-keyboard-layout",
+      "helper",
+      "vial-reader.js",
+    ),
   ];
 
   for (const p of candidates) {
@@ -61,7 +67,12 @@ interface ZmkReadResult {
   layers: Array<{
     index: number;
     name: string;
-    bindings: Array<{ behavior: string; behaviorId: number; param1: number; param2: number }>;
+    bindings: Array<{
+      behavior: string;
+      behaviorId: number;
+      param1: number;
+      param2: number;
+    }>;
   }>;
   behaviorNames: Record<number, string>;
 }
@@ -126,7 +137,9 @@ function runHelper(args: string[]): Promise<unknown> {
           }
           resolve(parsed);
         } catch {
-          reject(new Error(`Failed to parse helper output: ${stdout.slice(0, 200)}`));
+          reject(
+            new Error(`Failed to parse helper output: ${stdout.slice(0, 200)}`),
+          );
         }
       },
     );
@@ -146,7 +159,10 @@ export async function detectVialDevices(): Promise<VialDevice[]> {
 /** Detect connected ZMK Studio keyboards (serial) */
 export async function detectZmkDevices(): Promise<VialDevice[]> {
   try {
-    const zmkHelperPath = getHelperPath().replace("vial-reader.js", "zmk-reader.js");
+    const zmkHelperPath = getHelperPath().replace(
+      "vial-reader.js",
+      "zmk-reader.js",
+    );
     const nodePath = findNodeBinary();
 
     return new Promise((resolve) => {
@@ -162,7 +178,10 @@ export async function detectZmkDevices(): Promise<VialDevice[]> {
         },
         (error, stdout, stderr) => {
           if (stderr) console.log("[zmk-helper]", stderr.trim());
-          if (error) { resolve([]); return; }
+          if (error) {
+            resolve([]);
+            return;
+          }
           try {
             const parsed = JSON.parse(stdout);
             resolve(parsed.devices || []);
@@ -179,13 +198,19 @@ export async function detectZmkDevices(): Promise<VialDevice[]> {
 
 /** Detect ALL connected keyboards (Vial + ZMK) */
 export async function detectAllDevices(): Promise<VialDevice[]> {
-  const [vial, zmk] = await Promise.all([detectVialDevices(), detectZmkDevices()]);
+  const [vial, zmk] = await Promise.all([
+    detectVialDevices(),
+    detectZmkDevices(),
+  ]);
   return [...vial, ...zmk];
 }
 
 /** Read a ZMK Studio keyboard over serial */
 export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
-  const zmkHelperPath = getHelperPath().replace("vial-reader.js", "zmk-reader.js");
+  const zmkHelperPath = getHelperPath().replace(
+    "vial-reader.js",
+    "zmk-reader.js",
+  );
   const nodePath = findNodeBinary();
 
   const result = await new Promise<ZmkReadResult>((resolve, reject) => {
@@ -204,14 +229,22 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
         if (error) {
           try {
             const parsed = JSON.parse(stdout);
-            if (parsed.error) { reject(new Error(parsed.error)); return; }
-          } catch { /* ignore */ }
+            if (parsed.error) {
+              reject(new Error(parsed.error));
+              return;
+            }
+          } catch {
+            /* ignore */
+          }
           reject(new Error(stderr || error.message));
           return;
         }
         try {
           const parsed = JSON.parse(stdout);
-          if (parsed.error) { reject(new Error(parsed.error)); return; }
+          if (parsed.error) {
+            reject(new Error(parsed.error));
+            return;
+          }
           resolve(parsed as ZmkReadResult);
         } catch {
           reject(new Error("Failed to parse ZMK helper output"));
@@ -251,7 +284,11 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
         return `TO(${b.param1})`;
       }
       // Fallback: show behavior name
-      return b.behavior + (b.param1 ? ` ${b.param1}` : "") + (b.param2 ? ` ${b.param2}` : "");
+      return (
+        b.behavior +
+        (b.param1 ? ` ${b.param1}` : "") +
+        (b.param2 ? ` ${b.param2}` : "")
+      );
     }),
   }));
 
@@ -274,25 +311,67 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
 export async function readBoardSettings(): Promise<{
   vialProtocol: number;
   lightingType: string;
-  settings: Record<number, { name: string; tab: string; qsid: number; value: number; unit?: string; type?: string; min?: number; max?: number }>;
-  rgb: { brightness: number; effect: number; speed: number; hue: number; saturation: number } | null;
+  settings: Record<
+    number,
+    {
+      name: string;
+      tab: string;
+      qsid: number;
+      value: number;
+      unit?: string;
+      type?: string;
+      min?: number;
+      max?: number;
+    }
+  >;
+  rgb: {
+    brightness: number;
+    effect: number;
+    speed: number;
+    hue: number;
+    saturation: number;
+  } | null;
 }> {
   return (await runHelper(["settings"])) as never;
 }
 
 /** Write a single QMK setting */
-export async function writeBoardSetting(qsid: number, value: number): Promise<void> {
+export async function writeBoardSetting(
+  qsid: number,
+  value: number,
+): Promise<void> {
   await runHelper(["set-setting", String(qsid), String(value)]);
 }
 
 /** Write RGB values */
-export async function writeRgb(brightness: number, effect: number, speed: number, hue: number, saturation: number): Promise<void> {
-  await runHelper(["set-rgb", String(brightness), String(effect), String(speed), String(hue), String(saturation)]);
+export async function writeRgb(
+  brightness: number,
+  effect: number,
+  speed: number,
+  hue: number,
+  saturation: number,
+): Promise<void> {
+  await runHelper([
+    "set-rgb",
+    String(brightness),
+    String(effect),
+    String(speed),
+    String(hue),
+    String(saturation),
+  ]);
 }
 
 /** Get a quick hash of the current keymap to detect changes */
-export async function readKeymapHash(): Promise<{ hash: string; layerCount: number }> {
-  const result = (await runHelper(["keymap-hash"])) as { hash: string; layerCount: number; rows: number; cols: number };
+export async function readKeymapHash(): Promise<{
+  hash: string;
+  layerCount: number;
+}> {
+  const result = (await runHelper(["keymap-hash"])) as {
+    hash: string;
+    layerCount: number;
+    rows: number;
+    cols: number;
+  };
   return result;
 }
 
@@ -311,7 +390,11 @@ export async function readLockStatus(): Promise<{
 }
 
 /** Read the switch matrix state (which keys are physically pressed) */
-export async function readMatrixState(): Promise<{ rows: number; cols: number; pressed: Array<{ row: number; col: number }> }> {
+export async function readMatrixState(): Promise<{
+  rows: number;
+  cols: number;
+  pressed: Array<{ row: number; col: number }>;
+}> {
   const result = (await runHelper(["matrix"])) as {
     rows: number;
     cols: number;
@@ -321,7 +404,9 @@ export async function readMatrixState(): Promise<{ rows: number; cols: number; p
 }
 
 /** Read the full keymap and layout from a Vial keyboard */
-export async function readVialKeyboard(devicePath?: string): Promise<BoardProfile> {
+export async function readVialKeyboard(
+  devicePath?: string,
+): Promise<BoardProfile> {
   const args = ["read"];
   if (devicePath) args.push(devicePath);
 

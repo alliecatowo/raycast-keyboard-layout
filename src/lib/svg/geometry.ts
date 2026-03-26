@@ -50,7 +50,10 @@ export function detectSplitPoint(keys: PhysicalKey[]): number | null {
 }
 
 /** Compute the bounding box of all keys, accounting for split gap */
-export function computeBoundingBox(keys: PhysicalKey[], splitX: number | null): {
+export function computeBoundingBox(
+  keys: PhysicalKey[],
+  splitX: number | null,
+): {
   width: number;
   height: number;
   minX: number;
@@ -98,7 +101,13 @@ export function keyToPixels(
   minX: number,
   minY: number,
   splitX: number | null,
-): { x: number; y: number; width: number; height: number; rotation?: { angle: number; cx: number; cy: number } } {
+): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: { angle: number; cx: number; cy: number };
+} {
   const extraX = splitX !== null && key.x >= splitX ? SPLIT_GAP : 0;
 
   const x = toPixels(key.x - minX) + KEY_GAP + extraX;
@@ -110,7 +119,8 @@ export function keyToPixels(
 
   if (key.r) {
     // Rotation around the key's center (or rx/ry if specified)
-    const cx = key.rx !== undefined ? toPixels(key.rx - minX) + extraX : x + width / 2;
+    const cx =
+      key.rx !== undefined ? toPixels(key.rx - minX) + extraX : x + width / 2;
     const cy = key.ry !== undefined ? toPixels(key.ry - minY) : y + height / 2;
     result.rotation = { angle: key.r, cx, cy };
   }

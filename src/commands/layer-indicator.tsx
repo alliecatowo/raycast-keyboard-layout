@@ -90,7 +90,10 @@ export default function LayerIndicatorCommand() {
   if (!board) {
     return (
       <MenuBarExtra icon={Icon.Keyboard} title="No Board" isLoading={isLoading}>
-        <MenuBarExtra.Item title="No board configured" subtitle="Use Add Board to get started" />
+        <MenuBarExtra.Item
+          title="No board configured"
+          subtitle="Use Add Board to get started"
+        />
       </MenuBarExtra>
     );
   }
@@ -106,9 +109,18 @@ export default function LayerIndicatorCommand() {
     >
       <MenuBarExtra.Section title={board.name}>
         <MenuBarExtra.Item title="Keyboard" subtitle={board.keyboard} />
-        <MenuBarExtra.Item title="Firmware" subtitle={board.firmware.toUpperCase()} />
-        <MenuBarExtra.Item title="Connection" subtitle={isConnected ? "Connected (USB)" : "Not connected"} />
-        <MenuBarExtra.Item title="Layers" subtitle={String(board.layers.length)} />
+        <MenuBarExtra.Item
+          title="Firmware"
+          subtitle={board.firmware.toUpperCase()}
+        />
+        <MenuBarExtra.Item
+          title="Connection"
+          subtitle={isConnected ? "Connected (USB)" : "Not connected"}
+        />
+        <MenuBarExtra.Item
+          title="Layers"
+          subtitle={String(board.layers.length)}
+        />
       </MenuBarExtra.Section>
 
       <MenuBarExtra.Section title="Layers">
@@ -140,7 +152,11 @@ export default function LayerIndicatorCommand() {
       <MenuBarExtra.Section>
         <MenuBarExtra.Item
           title="View Full Layout"
-          onAction={() => open("raycast://extensions/alliecatowo/keyboard-layout-visualizer/show-layout")}
+          onAction={() =>
+            open(
+              "raycast://extensions/alliecatowo/keyboard-layout-visualizer/show-layout",
+            )
+          }
         />
         <MenuBarExtra.Item
           title="Open Vial"

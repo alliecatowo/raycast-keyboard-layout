@@ -1,6 +1,19 @@
-import { Action, ActionPanel, Detail, Icon, List, showToast, Toast, useNavigation } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Detail,
+  Icon,
+  List,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
-import { detectAllDevices, readVialKeyboard, readZmkKeyboard } from "../lib/vial/client";
+import {
+  detectAllDevices,
+  readVialKeyboard,
+  readZmkKeyboard,
+} from "../lib/vial/client";
 import { saveBoard } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import BoardDetailView from "./board-detail-view";
@@ -30,7 +43,9 @@ export default function DetectBoardCommand() {
       const found = await detectAllDevices();
       setDevices(found);
       if (found.length === 0) {
-        setError("No keyboards detected. Make sure your board is plugged in and has Vial or ZMK Studio firmware.");
+        setError(
+          "No keyboards detected. Make sure your board is plugged in and has Vial or ZMK Studio firmware.",
+        );
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to scan for devices");
@@ -71,7 +86,11 @@ export default function DetectBoardCommand() {
     } catch (e) {
       toast.hide();
       const msg = e instanceof Error ? e.message : "Failed to read keyboard";
-      showToast({ style: Toast.Style.Failure, title: "Read failed", message: msg });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Read failed",
+        message: msg,
+      });
     } finally {
       setIsReading(false);
     }
@@ -84,8 +103,16 @@ export default function DetectBoardCommand() {
         markdown={`# Detect Keyboard\n\n${error}\n\n**Troubleshooting:**\n- Is your keyboard plugged in via USB?\n- **Vial boards**: Must have Vial firmware ([get.vial.today](https://get.vial.today))\n- **ZMK boards**: Must have ZMK Studio enabled in firmware\n- Try unplugging and replugging the cable\n\nYou can also import a keymap file manually.`}
         actions={
           <ActionPanel>
-            <Action title="Scan Again" icon={Icon.ArrowClockwise} onAction={scan} />
-            <Action.Push title="Import File Instead" icon={Icon.Document} target={<ImportKeymapCommand />} />
+            <Action
+              title="Scan Again"
+              icon={Icon.ArrowClockwise}
+              onAction={scan}
+            />
+            <Action.Push
+              title="Import File Instead"
+              icon={Icon.Document}
+              target={<ImportKeymapCommand />}
+            />
           </ActionPanel>
         }
       />
@@ -110,8 +137,16 @@ export default function DetectBoardCommand() {
                 icon={Icon.Download}
                 onAction={() => handleReadBoard(device)}
               />
-              <Action title="Scan Again" icon={Icon.ArrowClockwise} onAction={scan} />
-              <Action.Push title="Import File Instead" icon={Icon.Document} target={<ImportKeymapCommand />} />
+              <Action
+                title="Scan Again"
+                icon={Icon.ArrowClockwise}
+                onAction={scan}
+              />
+              <Action.Push
+                title="Import File Instead"
+                icon={Icon.Document}
+                target={<ImportKeymapCommand />}
+              />
             </ActionPanel>
           }
         />
@@ -125,7 +160,11 @@ export default function DetectBoardCommand() {
             subtitle="Use a QMK keymap.json file"
             actions={
               <ActionPanel>
-                <Action.Push title="Import File" icon={Icon.Document} target={<ImportKeymapCommand />} />
+                <Action.Push
+                  title="Import File"
+                  icon={Icon.Document}
+                  target={<ImportKeymapCommand />}
+                />
               </ActionPanel>
             }
           />

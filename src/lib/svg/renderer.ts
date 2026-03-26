@@ -19,7 +19,10 @@ const TMP_DIR = path.join("/tmp", "keyviz");
 const svgCache = new Map<string, SvgResult>();
 
 /** Compute a hash of the render inputs to detect changes */
-function computeRenderHash(physicalLayout: PhysicalKey[], options: RenderOptions): string {
+function computeRenderHash(
+  physicalLayout: PhysicalKey[],
+  options: RenderOptions,
+): string {
   const data = JSON.stringify({
     layout: physicalLayout,
     layerIndex: options.layerIndex,
@@ -72,7 +75,10 @@ export function generateSvg(
     const indices: number[] = [];
     for (let i = 0; i < physicalLayout.length; i++) {
       const isRight = physicalLayout[i].x >= rawSplitX;
-      if ((splitView === "left" && !isRight) || (splitView === "right" && isRight)) {
+      if (
+        (splitView === "left" && !isRight) ||
+        (splitView === "right" && isRight)
+      ) {
         indices.push(i);
       }
     }
@@ -104,14 +110,20 @@ export function generateSvg(
     const rawKeycode = renderKeycodes[i] ?? "KC_NO";
 
     const isTransparent =
-      rawKeycode === "KC_TRNS" || rawKeycode === "_______" || rawKeycode === "KC_TRANSPARENT";
+      rawKeycode === "KC_TRNS" ||
+      rawKeycode === "_______" ||
+      rawKeycode === "KC_TRANSPARENT";
 
     let parsed = parseKeycode(rawKeycode);
     let isGhost = false;
 
     // Ghost key resolution: if transparent, show the inherited key
     if (isTransparent && showGhost && options.layerIndex > 0) {
-      const resolved = resolveEffectiveKey(options.layers, options.layerIndex - 1, i);
+      const resolved = resolveEffectiveKey(
+        options.layers,
+        options.layerIndex - 1,
+        i,
+      );
       if (resolved.parsed.category !== "none") {
         parsed = resolved.parsed;
         isGhost = true;
@@ -156,7 +168,12 @@ export function generateSvg(
   const filePath = path.join(TMP_DIR, fileName);
   fs.writeFileSync(filePath, svg, "utf-8");
 
-  const result: SvgResult = { svg, filePath, width: totalWidth, height: totalHeight };
+  const result: SvgResult = {
+    svg,
+    filePath,
+    width: totalWidth,
+    height: totalHeight,
+  };
   svgCache.set(hash, result);
 
   return result;
@@ -184,9 +201,13 @@ function cleanupStaleSvgs(): void {
         if (now - stat.mtimeMs > maxAge) {
           fs.unlinkSync(filePath);
         }
-      } catch { /* ignore individual file errors */ }
+      } catch {
+        /* ignore individual file errors */
+      }
     }
-  } catch { /* ignore cleanup errors */ }
+  } catch {
+    /* ignore cleanup errors */
+  }
 }
 
 // Run cleanup on module load (once per session)

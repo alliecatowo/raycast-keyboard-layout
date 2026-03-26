@@ -25,13 +25,28 @@ function hsvToHex(h: number, s: number, v: number): string {
   const x = c * (1 - Math.abs(((hf / 60) % 2) - 1));
   const m = vf - c;
 
-  let r = 0, g = 0, b = 0;
-  if (hf < 60) { r = c; g = x; }
-  else if (hf < 120) { r = x; g = c; }
-  else if (hf < 180) { g = c; b = x; }
-  else if (hf < 240) { g = x; b = c; }
-  else if (hf < 300) { r = x; b = c; }
-  else { r = c; b = x; }
+  let r = 0,
+    g = 0,
+    b = 0;
+  if (hf < 60) {
+    r = c;
+    g = x;
+  } else if (hf < 120) {
+    r = x;
+    g = c;
+  } else if (hf < 180) {
+    g = c;
+    b = x;
+  } else if (hf < 240) {
+    g = x;
+    b = c;
+  } else if (hf < 300) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
 
   const ri = Math.round((r + m) * 255);
   const gi = Math.round((g + m) * 255);
@@ -66,18 +81,23 @@ export function computeKeyColors(
     case 1: // Solid Color
       return keyPositions.map(() => hsvToHex(hue, saturation, brightness));
 
-    case 2: { // Breathing
+    case 2: {
+      // Breathing
       // Simulate mid-breath (brightness cycles, use 70% as snapshot)
       const breathBrightness = Math.round(brightness * 0.7);
-      return keyPositions.map(() => hsvToHex(hue, saturation, breathBrightness));
+      return keyPositions.map(() =>
+        hsvToHex(hue, saturation, breathBrightness),
+      );
     }
 
-    case 3: { // Rainbow Mood — all keys same hue, hue rotates
+    case 3: {
+      // Rainbow Mood — all keys same hue, hue rotates
       // Snapshot at current hue
       return keyPositions.map(() => hsvToHex(hue, saturation, brightness));
     }
 
-    case 4: { // Rainbow Swirl — hue varies by position
+    case 4: {
+      // Rainbow Swirl — hue varies by position
       // Compute bounding box for normalization
       const minX = Math.min(...keyPositions.map((p) => p.x));
       const maxX = Math.max(...keyPositions.map((p) => p.x));
@@ -90,7 +110,8 @@ export function computeKeyColors(
       });
     }
 
-    case 5: { // Snake — lit segment moves across keys
+    case 5: {
+      // Snake — lit segment moves across keys
       // Snapshot: light up a segment based on hue offset
       const segmentSize = Math.max(3, Math.floor(keyPositions.length * 0.15));
       const segmentStart = Math.floor(keyPositions.length * 0.3); // snapshot position
@@ -103,7 +124,8 @@ export function computeKeyColors(
       });
     }
 
-    case 6: { // Knight — back and forth scanner
+    case 6: {
+      // Knight — back and forth scanner
       const width = Math.max(2, Math.floor(keyPositions.length * 0.1));
       const center = Math.floor(keyPositions.length * 0.4);
 
@@ -117,7 +139,8 @@ export function computeKeyColors(
       });
     }
 
-    case 8: { // Static Gradient — hue varies by x position
+    case 8: {
+      // Static Gradient — hue varies by x position
       const minX = Math.min(...keyPositions.map((p) => p.x));
       const maxX = Math.max(...keyPositions.map((p) => p.x));
       const range = maxX - minX || 1;
@@ -129,7 +152,8 @@ export function computeKeyColors(
       });
     }
 
-    case 14: { // Hue Wave — hue varies by position + time
+    case 14: {
+      // Hue Wave — hue varies by position + time
       const minX = Math.min(...keyPositions.map((p) => p.x));
       const maxX = Math.max(...keyPositions.map((p) => p.x));
       const range = maxX - minX || 1;
@@ -142,7 +166,8 @@ export function computeKeyColors(
       });
     }
 
-    case 15: { // Pixel Rain — random keys lit
+    case 15: {
+      // Pixel Rain — random keys lit
       return keyPositions.map((_, i) => {
         // Deterministic "random" based on position
         const isLit = (i * 7 + 3) % 5 === 0;

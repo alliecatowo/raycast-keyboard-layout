@@ -33,7 +33,13 @@ export function findKeyInLayers(
       if (!raw) continue;
 
       // Skip transparent/none
-      if (raw === "KC_TRNS" || raw === "_______" || raw === "KC_NO" || raw === "XXXXXXX") continue;
+      if (
+        raw === "KC_TRNS" ||
+        raw === "_______" ||
+        raw === "KC_NO" ||
+        raw === "XXXXXXX"
+      )
+        continue;
 
       const upperRaw = raw.toUpperCase();
 
@@ -55,7 +61,9 @@ export function findKeyInLayers(
           layerIndex: layer.index,
           layerName: layer.name,
           keyIndex,
-          label: parsed.label + (parsed.holdLabel ? ` (hold: ${parsed.holdLabel})` : ""),
+          label:
+            parsed.label +
+            (parsed.holdLabel ? ` (hold: ${parsed.holdLabel})` : ""),
           raw,
         });
       }

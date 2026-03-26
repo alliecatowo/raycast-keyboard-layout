@@ -13,7 +13,10 @@ import {
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { deleteBoard, getBoards } from "../lib/storage/boards";
-import { getActiveBoardId, setActiveBoardId } from "../lib/storage/active-board";
+import {
+  getActiveBoardId,
+  setActiveBoardId,
+} from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
 import ImportKeymapCommand from "./import-keymap";
 import BoardDetailView from "./board-detail-view";
@@ -45,7 +48,10 @@ export default function ManageBoardsCommand() {
       await confirmAlert({
         title: `Delete "${board.name}"?`,
         message: "This cannot be undone.",
-        primaryAction: { title: "Delete", style: Alert.ActionStyle.Destructive },
+        primaryAction: {
+          title: "Delete",
+          style: Alert.ActionStyle.Destructive,
+        },
       })
     ) {
       await deleteBoard(board.id);
@@ -82,7 +88,11 @@ export default function ManageBoardsCommand() {
           description="Import a keymap to get started"
           actions={
             <ActionPanel>
-              <Action.Push title="Import Keymap" icon={Icon.Plus} target={<ImportKeymapCommand />} />
+              <Action.Push
+                title="Import Keymap"
+                icon={Icon.Plus}
+                target={<ImportKeymapCommand />}
+              />
             </ActionPanel>
           }
         />
@@ -97,7 +107,11 @@ export default function ManageBoardsCommand() {
               content={getThumbnail(board) || Icon.Keyboard}
               title={board.name}
               subtitle={board.keyboard}
-              accessory={isActive ? { icon: { source: Icon.Checkmark, tintColor: Color.Green } } : undefined}
+              accessory={
+                isActive
+                  ? { icon: { source: Icon.Checkmark, tintColor: Color.Green } }
+                  : undefined
+              }
               actions={
                 <ActionPanel>
                   <Action.Push
@@ -113,7 +127,12 @@ export default function ManageBoardsCommand() {
                       onAction={() => handleSetActiveAndView(board)}
                     />
                   )}
-                  <Action.Push title="Import New Board" icon={Icon.Plus} target={<ImportKeymapCommand />} shortcut={{ modifiers: ["cmd"], key: "n" }} />
+                  <Action.Push
+                    title="Import New Board"
+                    icon={Icon.Plus}
+                    target={<ImportKeymapCommand />}
+                    shortcut={{ modifiers: ["cmd"], key: "n" }}
+                  />
                   <Action.Open
                     title="Open Vial"
                     target="vial"

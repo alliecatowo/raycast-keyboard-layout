@@ -1,4 +1,11 @@
-import { Action, ActionPanel, Detail, environment, getPreferenceValues, Icon } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Detail,
+  environment,
+  getPreferenceValues,
+  Icon,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { getActiveBoard } from "../lib/storage/active-board";
@@ -20,7 +27,10 @@ export default function ShowLayoutCommand() {
   const [currentLayer, setCurrentLayer] = useState(0);
   const [showAll, setShowAll] = useState(true);
   const [splitView, setSplitView] = useState<"both" | "left" | "right">(
-    (getPreferenceValues<Preferences>().defaultView as "both" | "left" | "right") || "both",
+    (getPreferenceValues<Preferences>().defaultView as
+      | "both"
+      | "left"
+      | "right") || "both",
   );
   const [isLoading, setIsLoading] = useState(true);
   const [noBoards, setNoBoards] = useState(false);
@@ -31,7 +41,10 @@ export default function ShowLayoutCommand() {
   useEffect(() => {
     async function load() {
       try {
-        const [active, boards] = await Promise.all([getActiveBoard(), getBoards()]);
+        const [active, boards] = await Promise.all([
+          getActiveBoard(),
+          getBoards(),
+        ]);
         setAllBoards(boards);
         if (!active) {
           setNoBoards(true);
@@ -52,7 +65,9 @@ export default function ShowLayoutCommand() {
                 speed: data.rgb.speed,
               });
             }
-          } catch { /* board not connected, that's ok */ }
+          } catch {
+            /* board not connected, that's ok */
+          }
         }
       } catch {
         setNoBoards(true);
@@ -88,7 +103,11 @@ export default function ShowLayoutCommand() {
         ].join("\n")}
         actions={
           <ActionPanel>
-            <Action.Push title="Add Board" icon={Icon.Plus} target={<AddBoardCommand />} />
+            <Action.Push
+              title="Add Board"
+              icon={Icon.Plus}
+              target={<AddBoardCommand />}
+            />
           </ActionPanel>
         }
       />
@@ -118,9 +137,13 @@ export default function ShowLayoutCommand() {
   const appearance = environment.appearance;
 
   // Compute RGB colors if enabled
-  const rgbColors = rgbEnabled && rgbState
-    ? computeKeyColors(rgbState, board.physicalLayout.map((k) => ({ x: k.x, y: k.y })))
-    : undefined;
+  const rgbColors =
+    rgbEnabled && rgbState
+      ? computeKeyColors(
+          rgbState,
+          board.physicalLayout.map((k) => ({ x: k.x, y: k.y })),
+        )
+      : undefined;
 
   let markdown = "";
 
@@ -128,8 +151,12 @@ export default function ShowLayoutCommand() {
     for (const l of board.layers) {
       try {
         const result = generateSvg(board.physicalLayout, {
-          appearance, theme: prefs.theme, layerIndex: l.index,
-          layers: board.layers, showGhostKeys: true, splitView,
+          appearance,
+          theme: prefs.theme,
+          layerIndex: l.index,
+          layers: board.layers,
+          showGhostKeys: true,
+          splitView,
         });
         markdown += `### ${l.name}\n\n![${l.name}](${result.filePath}?raycast-width=${result.width})\n\n`;
       } catch (e) {
@@ -140,8 +167,12 @@ export default function ShowLayoutCommand() {
     const layer = board.layers[currentLayer];
     try {
       const result = generateSvg(board.physicalLayout, {
-        appearance, theme: prefs.theme, layerIndex: currentLayer,
-        layers: board.layers, showGhostKeys: true, splitView,
+        appearance,
+        theme: prefs.theme,
+        layerIndex: currentLayer,
+        layers: board.layers,
+        showGhostKeys: true,
+        splitView,
       });
       markdown = `### ${layer?.name}\n\n![${layer?.name}](${result.filePath}?raycast-width=${result.width})`;
     } catch (e) {
@@ -162,7 +193,11 @@ export default function ShowLayoutCommand() {
       actions={
         <ActionPanel>
           {/* Primary action = Enter = Next Layer. This is what you do most. */}
-          <Action title="Next Layer →" icon={Icon.ChevronRight} onAction={nextLayer} />
+          <Action
+            title="Next Layer →"
+            icon={Icon.ChevronRight}
+            onAction={nextLayer}
+          />
           <Action
             title="← Previous Layer"
             icon={Icon.ChevronLeft}
@@ -186,8 +221,14 @@ export default function ShowLayoutCommand() {
               <Action
                 key={l.index}
                 title={`${l.name}${!showAll && l.index === currentLayer ? " ●" : ""}`}
-                shortcut={{ modifiers: ["cmd"], key: String(l.index + 1) as "1" }}
-                onAction={() => { setShowAll(false); setCurrentLayer(l.index); }}
+                shortcut={{
+                  modifiers: ["cmd"],
+                  key: String(l.index + 1) as "1",
+                }}
+                onAction={() => {
+                  setShowAll(false);
+                  setCurrentLayer(l.index);
+                }}
               />
             ))}
           </ActionPanel.Section>
@@ -202,8 +243,20 @@ export default function ShowLayoutCommand() {
               />
             )}
             <Action
-              title={splitView === "both" ? "Show Left Half" : splitView === "left" ? "Show Right Half" : "Show Both Halves"}
-              icon={splitView === "both" ? Icon.ArrowLeft : splitView === "left" ? Icon.ArrowRight : Icon.AppWindowGrid2x2}
+              title={
+                splitView === "both"
+                  ? "Show Left Half"
+                  : splitView === "left"
+                    ? "Show Right Half"
+                    : "Show Both Halves"
+              }
+              icon={
+                splitView === "both"
+                  ? Icon.ArrowLeft
+                  : splitView === "left"
+                    ? Icon.ArrowRight
+                    : Icon.AppWindowGrid2x2
+              }
               shortcut={{ modifiers: ["cmd", "shift"], key: "h" }}
               onAction={() => {
                 if (splitView === "both") setSplitView("left");
@@ -229,21 +282,36 @@ export default function ShowLayoutCommand() {
           )}
 
           <ActionPanel.Section>
-            <Action.Push title="Add Board" icon={Icon.Plus} target={<AddBoardCommand />} shortcut={{ modifiers: ["cmd"], key: "n" }} />
+            <Action.Push
+              title="Add Board"
+              icon={Icon.Plus}
+              target={<AddBoardCommand />}
+              shortcut={{ modifiers: ["cmd"], key: "n" }}
+            />
             <Action.ShowInFinder
               title="Open SVG in Viewer"
               path={(() => {
                 try {
                   return generateSvg(board.physicalLayout, {
-                    appearance, theme: prefs.theme,
-                    layerIndex: currentLayer, layers: board.layers,
-                    showGhostKeys: true, splitView, rgbColors,
+                    appearance,
+                    theme: prefs.theme,
+                    layerIndex: currentLayer,
+                    layers: board.layers,
+                    showGhostKeys: true,
+                    splitView,
+                    rgbColors,
                   }).filePath;
-                } catch { return ""; }
+                } catch {
+                  return "";
+                }
               })()}
               shortcut={{ modifiers: ["cmd", "shift"], key: "o" }}
             />
-            <Action.Open title="Open Vial" target="vial" shortcut={{ modifiers: ["cmd", "shift"], key: "v" }} />
+            <Action.Open
+              title="Open Vial"
+              target="vial"
+              shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
+            />
           </ActionPanel.Section>
         </ActionPanel>
       }

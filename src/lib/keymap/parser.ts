@@ -8,7 +8,10 @@ const LAYER_HEURISTICS: Array<{ pattern: RegExp; name: string }> = [
   { pattern: /KC_(MUTE|VOLU|VOLD|MNXT|MPRV|MPLY)/i, name: "Media" },
   { pattern: /KC_(MS_|BTN|WH_|ACL)/i, name: "Mouse" },
   { pattern: /KC_P\d|KC_NUM|KC_PDOT|KC_PENT/i, name: "Numpad" },
-  { pattern: /KC_(TILD|EXLM|AT|HASH|DLR|PERC|CIRC|AMPR|ASTR|LPRN|RPRN)/i, name: "Sym" },
+  {
+    pattern: /KC_(TILD|EXLM|AT|HASH|DLR|PERC|CIRC|AMPR|ASTR|LPRN|RPRN)/i,
+    name: "Sym",
+  },
 ];
 
 /** Auto-suggest a layer name based on its keycodes */
@@ -16,7 +19,13 @@ function suggestLayerName(index: number, keycodes: string[]): string {
   if (index === 0) return "Base";
 
   // Count non-transparent, non-none keys by heuristic category
-  const nonTrivial = keycodes.filter((kc) => kc !== "KC_TRNS" && kc !== "KC_NO" && kc !== "_______" && kc !== "XXXXXXX");
+  const nonTrivial = keycodes.filter(
+    (kc) =>
+      kc !== "KC_TRNS" &&
+      kc !== "KC_NO" &&
+      kc !== "_______" &&
+      kc !== "XXXXXXX",
+  );
   const counts = new Map<string, number>();
 
   for (const kc of nonTrivial) {

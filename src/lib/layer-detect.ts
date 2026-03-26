@@ -68,7 +68,11 @@ export function getLayerKeys(board: BoardProfile): Array<{
   targetLayer: number;
   keycode: string;
 }> {
-  const result: Array<{ keyIndex: number; targetLayer: number; keycode: string }> = [];
+  const result: Array<{
+    keyIndex: number;
+    targetLayer: number;
+    keycode: string;
+  }> = [];
   const baseLayer = board.layers[0];
   if (!baseLayer) return result;
 

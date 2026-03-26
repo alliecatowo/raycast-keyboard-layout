@@ -26,7 +26,9 @@ export default function SearchKeysCommand() {
 
     const allResults: KeySearchResult[] = [];
     for (const board of boards) {
-      allResults.push(...findKeyInLayers(query, board.layers, board.id, board.name));
+      allResults.push(
+        ...findKeyInLayers(query, board.layers, board.id, board.name),
+      );
     }
     setResults(allResults);
   }, [query, boards]);
@@ -66,7 +68,11 @@ export default function SearchKeysCommand() {
         if (boardResults.length === 0) return null;
 
         return (
-          <List.Section key={board.id} title={board.name} subtitle={`${boardResults.length} match(es)`}>
+          <List.Section
+            key={board.id}
+            title={board.name}
+            subtitle={`${boardResults.length} match(es)`}
+          >
             {boardResults.map((result, idx) => (
               <List.Item
                 key={`${result.boardId}-${result.layerIndex}-${result.keyIndex}-${idx}`}
@@ -74,12 +80,13 @@ export default function SearchKeysCommand() {
                 title={result.label}
                 subtitle={`Layer ${result.layerIndex}: ${result.layerName}`}
                 accessories={[{ text: result.raw }]}
-                detail={
-                  <SearchResultDetail board={board} result={result} />
-                }
+                detail={<SearchResultDetail board={board} result={result} />}
                 actions={
                   <ActionPanel>
-                    <Action.CopyToClipboard title="Copy Keycode" content={result.raw} />
+                    <Action.CopyToClipboard
+                      title="Copy Keycode"
+                      content={result.raw}
+                    />
                   </ActionPanel>
                 }
               />
@@ -91,7 +98,13 @@ export default function SearchKeysCommand() {
   );
 }
 
-function SearchResultDetail({ board, result }: { board: BoardProfile; result: KeySearchResult }) {
+function SearchResultDetail({
+  board,
+  result,
+}: {
+  board: BoardProfile;
+  result: KeySearchResult;
+}) {
   const appearance = environment.appearance;
 
   let markdown = "";

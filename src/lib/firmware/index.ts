@@ -1,4 +1,8 @@
-import { registerAdapter, detectAllDevicesViaAdapters, getAdapters } from "./adapter";
+import {
+  registerAdapter,
+  detectAllDevicesViaAdapters,
+  getAdapters,
+} from "./adapter";
 import { VialAdapter } from "./vial-adapter";
 import { ZmkAdapter } from "./zmk-adapter";
 

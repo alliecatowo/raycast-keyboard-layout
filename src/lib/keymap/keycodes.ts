@@ -54,21 +54,34 @@ const MOD_WRAP_RE = /^(MOD_\w+)\(([^)]+)\)$/;
 
 /** Modifier aliases for mod-tap shorthand */
 const MOD_TAP_PREFIXES: Record<string, string> = {
-  LSFT: "Shift", RSFT: "RShift",
-  LCTL: "Ctrl", RCTL: "RCtrl",
-  LALT: "Alt", RALT: "RAlt",
-  LGUI: "Cmd", RGUI: "RCmd",
-  HYPR: "Hyper", MEH: "Meh",
+  LSFT: "Shift",
+  RSFT: "RShift",
+  LCTL: "Ctrl",
+  RCTL: "RCtrl",
+  LALT: "Alt",
+  RALT: "RAlt",
+  LGUI: "Cmd",
+  RGUI: "RCmd",
+  HYPR: "Hyper",
+  MEH: "Meh",
   // C = Ctrl, S = Shift, A = Alt, G = GUI (QMK shorthand)
-  C: "Ctrl", S: "Shift", A: "Alt", G: "Cmd",
+  C: "Ctrl",
+  S: "Shift",
+  A: "Alt",
+  G: "Cmd",
 };
 
 const MOD_NAMES: Record<string, string> = {
-  MOD_LSFT: "Shift", MOD_RSFT: "RShift",
-  MOD_LCTL: "Ctrl", MOD_RCTL: "RCtrl",
-  MOD_LALT: "Alt", MOD_RALT: "RAlt",
-  MOD_LGUI: "Cmd", MOD_RGUI: "RCmd",
-  MOD_HYPR: "Hyper", MOD_MEH: "Meh",
+  MOD_LSFT: "Shift",
+  MOD_RSFT: "RShift",
+  MOD_LCTL: "Ctrl",
+  MOD_RCTL: "RCtrl",
+  MOD_LALT: "Alt",
+  MOD_RALT: "RAlt",
+  MOD_LGUI: "Cmd",
+  MOD_RGUI: "RCmd",
+  MOD_HYPR: "Hyper",
+  MOD_MEH: "Meh",
 };
 
 export interface ParsedKeycode {
@@ -105,7 +118,11 @@ export function parseKeycode(raw: string): ParsedKeycode {
   const trimmed = raw.trim();
 
   // Transparent
-  if (trimmed === "KC_TRNS" || trimmed === "_______" || trimmed === "KC_TRANSPARENT") {
+  if (
+    trimmed === "KC_TRNS" ||
+    trimmed === "_______" ||
+    trimmed === "KC_TRANSPARENT"
+  ) {
     return { label: "\u25BD", category: "transparent", raw: trimmed };
   }
 
@@ -157,7 +174,12 @@ export function parseKeycode(raw: string): ParsedKeycode {
   // Momentary layer: MO(n)
   const moMatch = trimmed.match(MO_RE);
   if (moMatch) {
-    return { label: `MO(${moMatch[1]})`, holdLabel: `L${moMatch[1]}`, category: "layer", raw: trimmed };
+    return {
+      label: `MO(${moMatch[1]})`,
+      holdLabel: `L${moMatch[1]}`,
+      category: "layer",
+      raw: trimmed,
+    };
   }
 
   // Toggle layer: TG(n)
@@ -187,7 +209,12 @@ export function parseKeycode(raw: string): ParsedKeycode {
   // Tap-toggle layer: TT(n)
   const ttMatch = trimmed.match(/^TT\((\d+)\)$/);
   if (ttMatch) {
-    return { label: `TT(${ttMatch[1]})`, holdLabel: `L${ttMatch[1]}`, category: "layer", raw: trimmed };
+    return {
+      label: `TT(${ttMatch[1]})`,
+      holdLabel: `L${ttMatch[1]}`,
+      category: "layer",
+      raw: trimmed,
+    };
   }
 
   // PDF(n) — persistent default layer
@@ -200,9 +227,15 @@ export function parseKeycode(raw: string): ParsedKeycode {
   const shtMatch = trimmed.match(/^SH_T\(([^)]+)\)$/);
   if (shtMatch) {
     const innerKc = lookupKeycode(shtMatch[1]);
-    return { label: innerKc?.label ?? shtMatch[1].replace("KC_", ""), holdLabel: "Swap", category: "modifier", raw: trimmed };
+    return {
+      label: innerKc?.label ?? shtMatch[1].replace("KC_", ""),
+      holdLabel: "Swap",
+      category: "modifier",
+      raw: trimmed,
+    };
   }
-  if (trimmed === "SH_TOGG") return { label: "Swap", category: "modifier", raw: trimmed };
+  if (trimmed === "SH_TOGG")
+    return { label: "Swap", category: "modifier", raw: trimmed };
 
   // TD(n) — tap dance
   const tdMatch = trimmed.match(/^TD\((\d+)\)$/);
@@ -219,7 +252,12 @@ export function parseKeycode(raw: string): ParsedKeycode {
   // LM(layer, mod) — layer + mod
   const lmMatch = trimmed.match(/^LM\((\d+),\s*([^)]+)\)$/);
   if (lmMatch) {
-    return { label: `LM(${lmMatch[1]})`, holdLabel: lmMatch[2], category: "layer", raw: trimmed };
+    return {
+      label: `LM(${lmMatch[1]})`,
+      holdLabel: lmMatch[2],
+      category: "layer",
+      raw: trimmed,
+    };
   }
 
   // KB_n — keyboard-specific keycodes (Vial's USER slots)
@@ -236,11 +274,23 @@ export function parseKeycode(raw: string): ParsedKeycode {
 
   // Decoded mod+key: Shift(KC_1), Ctrl+Alt(KC_DEL), etc.
   const decodedModMatch = trimmed.match(/^([A-Za-z+]+)\(([^)]+)\)$/);
-  if (decodedModMatch && !trimmed.startsWith("MT(") && !trimmed.startsWith("LT(") && !trimmed.startsWith("MO(") && !trimmed.startsWith("OSM(") && !trimmed.startsWith("MOD_")) {
+  if (
+    decodedModMatch &&
+    !trimmed.startsWith("MT(") &&
+    !trimmed.startsWith("LT(") &&
+    !trimmed.startsWith("MO(") &&
+    !trimmed.startsWith("OSM(") &&
+    !trimmed.startsWith("MOD_")
+  ) {
     const modName = decodedModMatch[1];
     const innerKc = lookupKeycode(decodedModMatch[2]);
     if (innerKc) {
-      return { label: innerKc.label, holdLabel: modName, category: "modifier", raw: trimmed };
+      return {
+        label: innerKc.label,
+        holdLabel: modName,
+        category: "modifier",
+        raw: trimmed,
+      };
     }
   }
 
@@ -254,7 +304,8 @@ export function parseKeycode(raw: string): ParsedKeycode {
   // MOD_xxx(KC_yyy) — from numeric keycode converter (shifted keys, etc.)
   const modWrapMatch = trimmed.match(MOD_WRAP_RE);
   if (modWrapMatch) {
-    const modName = MOD_NAMES[modWrapMatch[1]] ?? modWrapMatch[1].replace("MOD_", "");
+    const modName =
+      MOD_NAMES[modWrapMatch[1]] ?? modWrapMatch[1].replace("MOD_", "");
     const innerKc = lookupKeycode(modWrapMatch[2]);
     return {
       label: innerKc?.label ?? modWrapMatch[2].replace("KC_", ""),
@@ -268,18 +319,34 @@ export function parseKeycode(raw: string): ParsedKeycode {
   const rgbMatch = trimmed.match(RGB_RE);
   if (rgbMatch) {
     const RGB_LABELS: Record<string, string> = {
-      TOG: "RGB", MOD: "Mode+", RMOD: "Mode-",
-      HUI: "Hue+", HUD: "Hue-", SAI: "Sat+", SAD: "Sat-",
-      VAI: "Bri+", VAD: "Bri-", SPI: "Spd+", SPD: "Spd-",
+      TOG: "RGB",
+      MOD: "Mode+",
+      RMOD: "Mode-",
+      HUI: "Hue+",
+      HUD: "Hue-",
+      SAI: "Sat+",
+      SAD: "Sat-",
+      VAI: "Bri+",
+      VAD: "Bri-",
+      SPI: "Spd+",
+      SPD: "Spd-",
     };
-    return { label: RGB_LABELS[rgbMatch[1]] ?? `RGB ${rgbMatch[1]}`, category: "media", raw: trimmed };
+    return {
+      label: RGB_LABELS[rgbMatch[1]] ?? `RGB ${rgbMatch[1]}`,
+      category: "media",
+      raw: trimmed,
+    };
   }
 
   // System keycodes
-  if (trimmed === "QK_BOOT") return { label: "Boot", category: "system", raw: trimmed };
-  if (trimmed === "QK_RBT") return { label: "Reboot", category: "system", raw: trimmed };
-  if (trimmed === "DB_TOGG") return { label: "Debug", category: "system", raw: trimmed };
-  if (trimmed === "EE_CLR") return { label: "EEClr", category: "system", raw: trimmed };
+  if (trimmed === "QK_BOOT")
+    return { label: "Boot", category: "system", raw: trimmed };
+  if (trimmed === "QK_RBT")
+    return { label: "Reboot", category: "system", raw: trimmed };
+  if (trimmed === "DB_TOGG")
+    return { label: "Debug", category: "system", raw: trimmed };
+  if (trimmed === "EE_CLR")
+    return { label: "EEClr", category: "system", raw: trimmed };
 
   // Simple keycode lookup (hand-maintained DB)
   const kc = lookupKeycode(trimmed);

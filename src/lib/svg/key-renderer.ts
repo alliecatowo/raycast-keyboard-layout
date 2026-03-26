@@ -4,7 +4,11 @@ import { ParsedKeycode } from "../keymap/keycodes";
 
 /** Escape XML special characters */
 function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 interface KeyRenderParams {
@@ -22,7 +26,18 @@ interface KeyRenderParams {
 
 /** Render a single key as SVG elements */
 export function renderKey(params: KeyRenderParams): string {
-  const { x, y, width, height, parsed, palette, isHighlighted, isGhost, rotation, rgbColor } = params;
+  const {
+    x,
+    y,
+    width,
+    height,
+    parsed,
+    palette,
+    isHighlighted,
+    isGhost,
+    rotation,
+    rgbColor,
+  } = params;
   const lines: string[] = [];
 
   // Determine colors

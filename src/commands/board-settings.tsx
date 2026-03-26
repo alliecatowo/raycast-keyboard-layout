@@ -1,6 +1,22 @@
-import { Action, ActionPanel, Color, Detail, Form, Icon, List, showToast, Toast, useNavigation } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Color,
+  Detail,
+  Form,
+  Icon,
+  List,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
-import { readBoardSettings, writeBoardSetting, writeRgb, readLockStatus } from "../lib/vial/client";
+import {
+  readBoardSettings,
+  writeBoardSetting,
+  writeRgb,
+  readLockStatus,
+} from "../lib/vial/client";
 import { getActiveBoard } from "../lib/storage/active-board";
 import { updateBoard } from "../lib/storage/boards";
 import { BoardProfile } from "../lib/types";
@@ -31,10 +47,24 @@ interface LockStatus {
 }
 
 const RGB_EFFECTS = [
-  "Off", "Solid", "Breathing", "Rainbow Mood", "Rainbow Swirl", "Snake",
-  "Knight", "Christmas", "Static Gradient", "RGB Test", "Alternating",
-  "Twinkle", "Hue Breathing", "Hue Pendulum", "Hue Wave", "Pixel Rain",
-  "Pixel Flow", "Pixel Fractal",
+  "Off",
+  "Solid",
+  "Breathing",
+  "Rainbow Mood",
+  "Rainbow Swirl",
+  "Snake",
+  "Knight",
+  "Christmas",
+  "Static Gradient",
+  "RGB Test",
+  "Alternating",
+  "Twinkle",
+  "Hue Breathing",
+  "Hue Pendulum",
+  "Hue Wave",
+  "Pixel Rain",
+  "Pixel Flow",
+  "Pixel Fractal",
 ];
 
 export default function BoardSettingsCommand() {
@@ -52,10 +82,14 @@ export default function BoardSettingsCommand() {
     async function load() {
       try {
         const activeBoard = await getActiveBoard();
-        if (!activeBoard) { setError("No board loaded. Add a board first."); return; }
+        if (!activeBoard) {
+          setError("No board loaded. Add a board first.");
+          return;
+        }
         setBoard(activeBoard);
 
-        const isVialCapable = activeBoard.firmware === "qmk" || activeBoard.firmware === "vial";
+        const isVialCapable =
+          activeBoard.firmware === "qmk" || activeBoard.firmware === "vial";
         const isViaCapable = isVialCapable || activeBoard.firmware === "via";
 
         if (isViaCapable) {
@@ -71,7 +105,9 @@ export default function BoardSettingsCommand() {
               try {
                 const lock = await readLockStatus();
                 setLockStatus(lock);
-              } catch { /* not critical */ }
+              } catch {
+                /* not critical */
+              }
             }
           } catch {
             // Board not connected — show stored info only
@@ -87,7 +123,12 @@ export default function BoardSettingsCommand() {
   }, []);
 
   if (error || !board) {
-    return <Detail isLoading={isLoading} markdown={error ? `# Board Settings\n\n${error}` : ""} />;
+    return (
+      <Detail
+        isLoading={isLoading}
+        markdown={error ? `# Board Settings\n\n${error}` : ""}
+      />
+    );
   }
 
   // Group settings by tab
@@ -100,11 +141,16 @@ export default function BoardSettingsCommand() {
 
   function firmwareLabel(): string {
     switch (board!.firmware) {
-      case "vial": return "Vial (QMK)";
-      case "via": return "VIA (QMK)";
-      case "qmk": return "QMK (Vial)";
-      case "zmk": return "ZMK";
-      default: return board!.firmware.toUpperCase();
+      case "vial":
+        return "Vial (QMK)";
+      case "via":
+        return "VIA (QMK)";
+      case "qmk":
+        return "QMK (Vial)";
+      case "zmk":
+        return "ZMK";
+      default:
+        return board!.firmware.toUpperCase();
     }
   }
 
@@ -113,11 +159,19 @@ export default function BoardSettingsCommand() {
       {/* Board Status */}
       <List.Section title="Board Status">
         <List.Item
-          icon={{ source: Icon.Keyboard, tintColor: isConnected ? Color.Green : Color.SecondaryText }}
+          icon={{
+            source: Icon.Keyboard,
+            tintColor: isConnected ? Color.Green : Color.SecondaryText,
+          }}
           title={board.name}
           subtitle={board.keyboard}
           accessories={[
-            { tag: { value: firmwareLabel(), color: isConnected ? Color.Green : Color.SecondaryText } },
+            {
+              tag: {
+                value: firmwareLabel(),
+                color: isConnected ? Color.Green : Color.SecondaryText,
+              },
+            },
             { text: isConnected ? "Connected" : "Not Connected" },
           ]}
         />
@@ -125,14 +179,26 @@ export default function BoardSettingsCommand() {
           <List.Item
             icon={lockStatus.isLocked ? Icon.Lock : Icon.LockUnlocked}
             title="Security"
-            subtitle={lockStatus.isLocked ? "Board is LOCKED" : "Board is unlocked"}
-            accessories={lockStatus.isLocked && lockStatus.unlockKeys.length > 0
-              ? [{ text: `Hold ${lockStatus.unlockKeys.length} key(s) to unlock` }]
-              : []
+            subtitle={
+              lockStatus.isLocked ? "Board is LOCKED" : "Board is unlocked"
+            }
+            accessories={
+              lockStatus.isLocked && lockStatus.unlockKeys.length > 0
+                ? [
+                    {
+                      text: `Hold ${lockStatus.unlockKeys.length} key(s) to unlock`,
+                    },
+                  ]
+                : []
             }
           />
         )}
-        <List.Item icon={Icon.Layers} title="Layers" subtitle={board.layers.map((l) => l.name).join(", ")} accessories={[{ text: String(board.layers.length) }]} />
+        <List.Item
+          icon={Icon.Layers}
+          title="Layers"
+          subtitle={board.layers.map((l) => l.name).join(", ")}
+          accessories={[{ text: String(board.layers.length) }]}
+        />
       </List.Section>
 
       {/* Layer Names */}
@@ -142,20 +208,36 @@ export default function BoardSettingsCommand() {
             key={l.index}
             icon={Icon.Text}
             title={l.name}
-            accessories={[{ tag: `Layer ${l.index}` }, { text: `${l.keycodes.length} keys` }]}
+            accessories={[
+              { tag: `Layer ${l.index}` },
+              { text: `${l.keycodes.length} keys` },
+            ]}
             actions={
               <ActionPanel>
-                <Action title="Rename" icon={Icon.Pencil} onAction={() => push(
-                  <RenameLayerForm board={board} layerIndex={l.index} currentName={l.name}
-                    onSaved={(newName) => {
-                      const updated = { ...board, layers: board.layers.map((layer) =>
-                        layer.index === l.index ? { ...layer, name: newName } : layer
-                      )};
-                      updateBoard(updated);
-                      setBoard(updated);
-                    }}
-                  />
-                )} />
+                <Action
+                  title="Rename"
+                  icon={Icon.Pencil}
+                  onAction={() =>
+                    push(
+                      <RenameLayerForm
+                        layerIndex={l.index}
+                        currentName={l.name}
+                        onSaved={(newName) => {
+                          const updated = {
+                            ...board,
+                            layers: board.layers.map((layer) =>
+                              layer.index === l.index
+                                ? { ...layer, name: newName }
+                                : layer,
+                            ),
+                          };
+                          updateBoard(updated);
+                          setBoard(updated);
+                        }}
+                      />,
+                    )
+                  }
+                />
               </ActionPanel>
             }
           />
@@ -169,14 +251,23 @@ export default function BoardSettingsCommand() {
             icon={Icon.Sun}
             title="Brightness"
             accessories={[
-              { tag: { value: `${Math.round((rgb.brightness / 255) * 100)}%`, color: Color.Yellow } },
+              {
+                tag: {
+                  value: `${Math.round((rgb.brightness / 255) * 100)}%`,
+                  color: Color.Yellow,
+                },
+              },
               { text: `${rgb.brightness}/255` },
             ]}
             actions={
               <ActionPanel>
-                <Action title="Edit RGB" icon={Icon.Pencil} onAction={() => push(
-                  <EditRgbForm rgb={rgb} onSaved={(v) => setRgb(v)} />
-                )} />
+                <Action
+                  title="Edit RGB"
+                  icon={Icon.Pencil}
+                  onAction={() =>
+                    push(<EditRgbForm rgb={rgb} onSaved={(v) => setRgb(v)} />)
+                  }
+                />
               </ActionPanel>
             }
           />
@@ -205,19 +296,34 @@ export default function BoardSettingsCommand() {
           {tabSettings.map((s) => {
             const isBool = s.type === "bool";
             const displayValue = isBool
-              ? (s.value ? "Enabled" : "Disabled")
+              ? s.value
+                ? "Enabled"
+                : "Disabled"
               : `${s.value}${s.unit ? ` ${s.unit}` : ""}`;
 
             return (
               <List.Item
                 key={s.qsid}
-                icon={isBool
-                  ? { source: s.value ? Icon.Checkmark : Icon.Circle, tintColor: s.value ? Color.Green : Color.SecondaryText }
-                  : Icon.Gear
+                icon={
+                  isBool
+                    ? {
+                        source: s.value ? Icon.Checkmark : Icon.Circle,
+                        tintColor: s.value ? Color.Green : Color.SecondaryText,
+                      }
+                    : Icon.Gear
                 }
                 title={s.name}
                 accessories={[
-                  { tag: { value: displayValue, color: isBool ? (s.value ? Color.Green : Color.SecondaryText) : Color.Blue } },
+                  {
+                    tag: {
+                      value: displayValue,
+                      color: isBool
+                        ? s.value
+                          ? Color.Green
+                          : Color.SecondaryText
+                        : Color.Blue,
+                    },
+                  },
                 ]}
                 actions={
                   <ActionPanel>
@@ -229,19 +335,41 @@ export default function BoardSettingsCommand() {
                           const newVal = s.value ? 0 : 1;
                           try {
                             await writeBoardSetting(s.qsid, newVal);
-                            setSettings((prev) => ({ ...prev, [s.qsid]: { ...s, value: newVal } }));
-                            showToast({ style: Toast.Style.Success, title: `${s.name}: ${newVal ? "Enabled" : "Disabled"}` });
+                            setSettings((prev) => ({
+                              ...prev,
+                              [s.qsid]: { ...s, value: newVal },
+                            }));
+                            showToast({
+                              style: Toast.Style.Success,
+                              title: `${s.name}: ${newVal ? "Enabled" : "Disabled"}`,
+                            });
                           } catch (e) {
-                            showToast({ style: Toast.Style.Failure, title: "Failed", message: e instanceof Error ? e.message : "" });
+                            showToast({
+                              style: Toast.Style.Failure,
+                              title: "Failed",
+                              message: e instanceof Error ? e.message : "",
+                            });
                           }
                         }}
                       />
                     ) : (
-                      <Action title="Edit" icon={Icon.Pencil} onAction={() => push(
-                        <EditSettingForm setting={s} onSaved={() => {
-                          readBoardSettings().then((data) => { setSettings(data.settings); setRgb(data.rgb); });
-                        }} />
-                      )} />
+                      <Action
+                        title="Edit"
+                        icon={Icon.Pencil}
+                        onAction={() =>
+                          push(
+                            <EditSettingForm
+                              setting={s}
+                              onSaved={() => {
+                                readBoardSettings().then((data) => {
+                                  setSettings(data.settings);
+                                  setRgb(data.rgb);
+                                });
+                              }}
+                            />,
+                          )
+                        }
+                      />
                     )}
                   </ActionPanel>
                 }
@@ -265,61 +393,182 @@ export default function BoardSettingsCommand() {
   );
 }
 
-function EditSettingForm({ setting, onSaved }: { setting: QmkSetting; onSaved: () => void }) {
+function EditSettingForm({
+  setting,
+  onSaved,
+}: {
+  setting: QmkSetting;
+  onSaved: () => void;
+}) {
   const { pop } = useNavigation();
   return (
     <Form
       navigationTitle={`Edit: ${setting.name}`}
-      actions={<ActionPanel><Action.SubmitForm title="Save" onSubmit={async (values: { value: string }) => {
-        const val = parseInt(values.value, 10);
-        if (isNaN(val)) { showToast({ style: Toast.Style.Failure, title: "Invalid value" }); return; }
-        try {
-          await writeBoardSetting(setting.qsid, val);
-          showToast({ style: Toast.Style.Success, title: `${setting.name} = ${val}${setting.unit ? ` ${setting.unit}` : ""}` });
-          onSaved();
-          pop();
-        } catch (e) { showToast({ style: Toast.Style.Failure, title: "Failed", message: e instanceof Error ? e.message : "" }); }
-      }} /></ActionPanel>}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm
+            title="Save"
+            onSubmit={async (values: { value: string }) => {
+              const val = parseInt(values.value, 10);
+              if (isNaN(val)) {
+                showToast({
+                  style: Toast.Style.Failure,
+                  title: "Invalid value",
+                });
+                return;
+              }
+              try {
+                await writeBoardSetting(setting.qsid, val);
+                showToast({
+                  style: Toast.Style.Success,
+                  title: `${setting.name} = ${val}${setting.unit ? ` ${setting.unit}` : ""}`,
+                });
+                onSaved();
+                pop();
+              } catch (e) {
+                showToast({
+                  style: Toast.Style.Failure,
+                  title: "Failed",
+                  message: e instanceof Error ? e.message : "",
+                });
+              }
+            }}
+          />
+        </ActionPanel>
+      }
     >
-      <Form.TextField id="value" title={setting.name} defaultValue={String(setting.value)}
-        info={[setting.unit && `Unit: ${setting.unit}`, setting.min !== undefined && `Min: ${setting.min}`, setting.max !== undefined && `Max: ${setting.max}`].filter(Boolean).join(". ")}
+      <Form.TextField
+        id="value"
+        title={setting.name}
+        defaultValue={String(setting.value)}
+        info={[
+          setting.unit && `Unit: ${setting.unit}`,
+          setting.min !== undefined && `Min: ${setting.min}`,
+          setting.max !== undefined && `Max: ${setting.max}`,
+        ]
+          .filter(Boolean)
+          .join(". ")}
       />
     </Form>
   );
 }
 
-function EditRgbForm({ rgb, onSaved }: { rgb: RgbValues; onSaved: (v: RgbValues) => void }) {
+function EditRgbForm({
+  rgb,
+  onSaved,
+}: {
+  rgb: RgbValues;
+  onSaved: (v: RgbValues) => void;
+}) {
   const { pop } = useNavigation();
   return (
     <Form
       navigationTitle="Edit RGB"
-      actions={<ActionPanel><Action.SubmitForm title="Save" onSubmit={async (values: Record<string, string>) => {
-        const v = { brightness: parseInt(values.brightness), effect: parseInt(values.effect), speed: parseInt(values.speed), hue: parseInt(values.hue), saturation: parseInt(values.saturation) };
-        try { await writeRgb(v.brightness, v.effect, v.speed, v.hue, v.saturation); showToast({ style: Toast.Style.Success, title: "RGB saved" }); onSaved(v); pop(); }
-        catch (e) { showToast({ style: Toast.Style.Failure, title: "Failed", message: e instanceof Error ? e.message : "" }); }
-      }} /></ActionPanel>}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm
+            title="Save"
+            onSubmit={async (values: Record<string, string>) => {
+              const v = {
+                brightness: parseInt(values.brightness),
+                effect: parseInt(values.effect),
+                speed: parseInt(values.speed),
+                hue: parseInt(values.hue),
+                saturation: parseInt(values.saturation),
+              };
+              try {
+                await writeRgb(
+                  v.brightness,
+                  v.effect,
+                  v.speed,
+                  v.hue,
+                  v.saturation,
+                );
+                showToast({ style: Toast.Style.Success, title: "RGB saved" });
+                onSaved(v);
+                pop();
+              } catch (e) {
+                showToast({
+                  style: Toast.Style.Failure,
+                  title: "Failed",
+                  message: e instanceof Error ? e.message : "",
+                });
+              }
+            }}
+          />
+        </ActionPanel>
+      }
     >
-      <Form.TextField id="brightness" title="Brightness" defaultValue={String(rgb.brightness)} info="0–255" />
-      <Form.TextField id="effect" title="Effect" defaultValue={String(rgb.effect)} info={`0–${RGB_EFFECTS.length - 1}. Current: ${RGB_EFFECTS[rgb.effect] ?? "Unknown"}`} />
-      <Form.TextField id="speed" title="Speed" defaultValue={String(rgb.speed)} info="0–255" />
-      <Form.TextField id="hue" title="Hue" defaultValue={String(rgb.hue)} info="0–255" />
-      <Form.TextField id="saturation" title="Saturation" defaultValue={String(rgb.saturation)} info="0–255" />
+      <Form.TextField
+        id="brightness"
+        title="Brightness"
+        defaultValue={String(rgb.brightness)}
+        info="0–255"
+      />
+      <Form.TextField
+        id="effect"
+        title="Effect"
+        defaultValue={String(rgb.effect)}
+        info={`0–${RGB_EFFECTS.length - 1}. Current: ${RGB_EFFECTS[rgb.effect] ?? "Unknown"}`}
+      />
+      <Form.TextField
+        id="speed"
+        title="Speed"
+        defaultValue={String(rgb.speed)}
+        info="0–255"
+      />
+      <Form.TextField
+        id="hue"
+        title="Hue"
+        defaultValue={String(rgb.hue)}
+        info="0–255"
+      />
+      <Form.TextField
+        id="saturation"
+        title="Saturation"
+        defaultValue={String(rgb.saturation)}
+        info="0–255"
+      />
     </Form>
   );
 }
 
-function RenameLayerForm({ board, layerIndex, currentName, onSaved }: { board: BoardProfile; layerIndex: number; currentName: string; onSaved: (name: string) => void }) {
+function RenameLayerForm({
+  layerIndex,
+  currentName,
+  onSaved,
+}: {
+  layerIndex: number;
+  currentName: string;
+  onSaved: (name: string) => void;
+}) {
   const { pop } = useNavigation();
   return (
     <Form
       navigationTitle={`Rename Layer ${layerIndex}`}
-      actions={<ActionPanel><Action.SubmitForm title="Save" onSubmit={(values: { name: string }) => {
-        const name = values.name.trim();
-        if (!name) { showToast({ style: Toast.Style.Failure, title: "Name can't be empty" }); return; }
-        onSaved(name);
-        showToast({ style: Toast.Style.Success, title: `Renamed to "${name}"` });
-        pop();
-      }} /></ActionPanel>}
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm
+            title="Save"
+            onSubmit={(values: { name: string }) => {
+              const name = values.name.trim();
+              if (!name) {
+                showToast({
+                  style: Toast.Style.Failure,
+                  title: "Name can't be empty",
+                });
+                return;
+              }
+              onSaved(name);
+              showToast({
+                style: Toast.Style.Success,
+                title: `Renamed to "${name}"`,
+              });
+              pop();
+            }}
+          />
+        </ActionPanel>
+      }
     >
       <Form.TextField id="name" title="Layer Name" defaultValue={currentName} />
     </Form>

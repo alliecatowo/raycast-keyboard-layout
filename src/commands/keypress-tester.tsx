@@ -1,4 +1,12 @@
-import { Action, ActionPanel, Detail, environment, Icon, showToast, Toast } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Detail,
+  environment,
+  Icon,
+  showToast,
+  Toast,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { getActiveBoard } from "../lib/storage/active-board";
@@ -24,7 +32,11 @@ export default function KeypressTesterCommand() {
       setBoard(b);
       setIsLoading(false);
       if (!b) {
-        showToast({ style: Toast.Style.Failure, title: "No board loaded", message: "Add a board first" });
+        showToast({
+          style: Toast.Style.Failure,
+          title: "No board loaded",
+          message: "Add a board first",
+        });
       }
     });
   }, []);
@@ -33,7 +45,11 @@ export default function KeypressTesterCommand() {
     return (
       <Detail
         isLoading={isLoading}
-        markdown={isLoading ? "" : "# No Board\n\nAdd a board first to use the keypress tester."}
+        markdown={
+          isLoading
+            ? ""
+            : "# No Board\n\nAdd a board first to use the keypress tester."
+        }
       />
     );
   }
@@ -41,7 +57,8 @@ export default function KeypressTesterCommand() {
   const appearance = environment.appearance;
   const totalKeys = board.physicalLayout.length;
   const testedCount = testedKeys.size;
-  const coverage = totalKeys > 0 ? Math.round((testedCount / totalKeys) * 100) : 0;
+  const coverage =
+    totalKeys > 0 ? Math.round((testedCount / totalKeys) * 100) : 0;
 
   // Generate SVG with tested keys highlighted
   let markdown = "";
@@ -71,22 +88,39 @@ export default function KeypressTesterCommand() {
         <Detail.Metadata>
           <Detail.Metadata.Label title="Board" text={board.name} />
           <Detail.Metadata.Separator />
-          <Detail.Metadata.Label title="Keys Tested" text={`${testedCount} / ${totalKeys}`} />
+          <Detail.Metadata.Label
+            title="Keys Tested"
+            text={`${testedCount} / ${totalKeys}`}
+          />
           <Detail.Metadata.Label title="Coverage" text={`${coverage}%`} />
           <Detail.Metadata.Separator />
           <Detail.Metadata.Label
             title="Status"
-            text={coverage === 100 ? "All keys tested!" : "Press keys on your keyboard..."}
+            text={
+              coverage === 100
+                ? "All keys tested!"
+                : "Press keys on your keyboard..."
+            }
             icon={coverage === 100 ? Icon.Checkmark : Icon.Clock}
           />
           <Detail.Metadata.Separator />
-          <Detail.Metadata.Label title="How it works" text="Highlighted keys = tested" />
-          <Detail.Metadata.Label title="" text="Connect via USB and use Vial's matrix tester for true switch testing" />
+          <Detail.Metadata.Label
+            title="How it works"
+            text="Highlighted keys = tested"
+          />
+          <Detail.Metadata.Label
+            title=""
+            text="Connect via USB and use Vial's matrix tester for true switch testing"
+          />
         </Detail.Metadata>
       }
       actions={
         <ActionPanel>
-          <Action title="Reset Test" icon={Icon.ArrowCounterClockwise} onAction={resetTest} />
+          <Action
+            title="Reset Test"
+            icon={Icon.ArrowCounterClockwise}
+            onAction={resetTest}
+          />
           <Action.CopyToClipboard
             title="Copy Test Results"
             content={`${board.name}: ${testedCount}/${totalKeys} keys tested (${coverage}%)`}

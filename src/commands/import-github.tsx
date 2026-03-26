@@ -1,4 +1,13 @@
-import { Action, ActionPanel, Form, Icon, List, showToast, Toast, useNavigation } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Form,
+  Icon,
+  List,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import { useState } from "react";
 import { parseQmkKeymapJson, keymapToBoardProfile } from "../lib/keymap/parser";
 import { detectFirmwareType, parseZmkKeymap } from "../lib/keymap/zmk-parser";
@@ -32,7 +41,9 @@ export default function ImportGitHubCommand() {
   function parseRepoUrl(input: string): { owner: string; repo: string } | null {
     // Handle: owner/repo, https://github.com/owner/repo, github.com/owner/repo
     const cleaned = input.trim().replace(/\/+$/, "");
-    const match = cleaned.match(/(?:(?:https?:\/\/)?github\.com\/)?([^/]+)\/([^/]+)/);
+    const match = cleaned.match(
+      /(?:(?:https?:\/\/)?github\.com\/)?([^/]+)\/([^/]+)/,
+    );
     if (match) return { owner: match[1], repo: match[2].replace(".git", "") };
     return null;
   }
@@ -40,7 +51,11 @@ export default function ImportGitHubCommand() {
   async function browseRepo(pathToFetch?: string) {
     const parsed = parseRepoUrl(repo);
     if (!parsed) {
-      showToast({ style: Toast.Style.Failure, title: "Invalid repo", message: "Enter owner/repo or a GitHub URL" });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Invalid repo",
+        message: "Enter owner/repo or a GitHub URL",
+      });
       return;
     }
 
@@ -54,7 +69,11 @@ export default function ImportGitHubCommand() {
       });
 
       if (!response.ok) {
-        throw new Error(response.status === 404 ? "Repository or path not found" : `GitHub API error: ${response.status}`);
+        throw new Error(
+          response.status === 404
+            ? "Repository or path not found"
+            : `GitHub API error: ${response.status}`,
+        );
       }
 
       const data = (await response.json()) as GitHubFile | GitHubFile[];
@@ -71,7 +90,11 @@ export default function ImportGitHubCommand() {
       setRepoPath(apiPath);
       setBreadcrumb(apiPath ? apiPath.split("/") : []);
     } catch (e) {
-      showToast({ style: Toast.Style.Failure, title: "Failed to browse", message: e instanceof Error ? e.message : "Unknown error" });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to browse",
+        message: e instanceof Error ? e.message : "Unknown error",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -84,23 +107,37 @@ export default function ImportGitHubCommand() {
     }
 
     // Check if it's a keymap file
-    const isKeymap = file.name.endsWith(".json") || file.name.endsWith(".keymap");
+    const isKeymap =
+      file.name.endsWith(".json") || file.name.endsWith(".keymap");
     if (!isKeymap) {
-      showToast({ style: Toast.Style.Failure, title: "Not a keymap file", message: "Select a .json or .keymap file" });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Not a keymap file",
+        message: "Select a .json or .keymap file",
+      });
       return;
     }
 
     if (!file.download_url) {
-      showToast({ style: Toast.Style.Failure, title: "Cannot download", message: "No download URL for this file" });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Cannot download",
+        message: "No download URL for this file",
+      });
       return;
     }
 
     setIsLoading(true);
-    const toast = await showToast({ style: Toast.Style.Animated, title: "Importing...", message: file.name });
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Importing...",
+      message: file.name,
+    });
 
     try {
       const response = await fetch(file.download_url);
-      if (!response.ok) throw new Error(`Failed to download: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`Failed to download: ${response.status}`);
       const content = await response.text();
 
       const firmware = detectFirmwareType(content);
@@ -111,27 +148,47 @@ export default function ImportGitHubCommand() {
         const partial = parseZmkKeymap(content, boardName, file.download_url);
         board = {
           ...partial,
-          physicalLayout: generatePlaceholderLayout(partial.layers[0]?.keycodes.length ?? 0),
+          physicalLayout: generatePlaceholderLayout(
+            partial.layers[0]?.keycodes.length ?? 0,
+          ),
         };
       } else if (firmware === "qmk") {
         const keymap = parseQmkKeymapJson(content);
-        const physicalLayout = await getPhysicalLayout(keymap.keyboard, keymap.layout);
-        const boardName = keymap.keyboard.split("/").pop() || file.name.replace(".json", "");
-        const partial = keymapToBoardProfile(keymap, boardName, file.download_url);
+        const physicalLayout = await getPhysicalLayout(
+          keymap.keyboard,
+          keymap.layout,
+        );
+        const boardName =
+          keymap.keyboard.split("/").pop() || file.name.replace(".json", "");
+        const partial = keymapToBoardProfile(
+          keymap,
+          boardName,
+          file.download_url,
+        );
         board = { ...partial, physicalLayout };
       } else {
-        throw new Error("Unrecognized file format — expected QMK .json or ZMK .keymap");
+        throw new Error(
+          "Unrecognized file format — expected QMK .json or ZMK .keymap",
+        );
       }
 
       await saveBoard(board);
       await setActiveBoardId(board.id);
 
       toast.hide();
-      await showToast({ style: Toast.Style.Success, title: "Imported!", message: board.name });
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Imported!",
+        message: board.name,
+      });
       push(<BoardDetailView board={board} />);
     } catch (e) {
       toast.hide();
-      showToast({ style: Toast.Style.Failure, title: "Import failed", message: e instanceof Error ? e.message : "Unknown error" });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Import failed",
+        message: e instanceof Error ? e.message : "Unknown error",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +206,14 @@ export default function ImportGitHubCommand() {
         navigationTitle="Import from GitHub"
         actions={
           <ActionPanel>
-            <Action.SubmitForm title="Browse Repository" onSubmit={(values) => { setRepo(values.repo); setRepoPath(values.path || ""); browseRepo(values.path); }} />
+            <Action.SubmitForm
+              title="Browse Repository"
+              onSubmit={(values) => {
+                setRepo(values.repo);
+                setRepoPath(values.path || "");
+                browseRepo(values.path);
+              }}
+            />
           </ActionPanel>
         }
       >
@@ -184,21 +248,42 @@ export default function ImportGitHubCommand() {
           subtitle="Go up"
           actions={
             <ActionPanel>
-              <Action title="Go Up" icon={Icon.ArrowUp} onAction={goUp} />
+              <Action title="Go up" icon={Icon.ArrowUp} onAction={goUp} />
             </ActionPanel>
           }
         />
       )}
 
       {files.map((file) => {
-        const isKeymap = file.name.endsWith(".json") || file.name.endsWith(".keymap");
+        const isKeymap =
+          file.name.endsWith(".json") || file.name.endsWith(".keymap");
         return (
           <List.Item
             key={file.path}
-            icon={file.type === "dir" ? Icon.Folder : isKeymap ? Icon.Keyboard : Icon.Document}
+            icon={
+              file.type === "dir"
+                ? Icon.Folder
+                : isKeymap
+                  ? Icon.Keyboard
+                  : Icon.Document
+            }
             title={file.name}
-            subtitle={file.type === "dir" ? "directory" : `${(file.size / 1024).toFixed(1)} KB`}
-            accessories={isKeymap ? [{ tag: { value: file.name.endsWith(".keymap") ? "ZMK" : "QMK" } }] : []}
+            subtitle={
+              file.type === "dir"
+                ? "directory"
+                : `${(file.size / 1024).toFixed(1)} KB`
+            }
+            accessories={
+              isKeymap
+                ? [
+                    {
+                      tag: {
+                        value: file.name.endsWith(".keymap") ? "ZMK" : "QMK",
+                      },
+                    },
+                  ]
+                : []
+            }
             actions={
               <ActionPanel>
                 <Action
@@ -207,7 +292,12 @@ export default function ImportGitHubCommand() {
                   onAction={() => handleSelectFile(file)}
                 />
                 {breadcrumb.length > 0 && (
-                  <Action title="Go Up" icon={Icon.ArrowUp} shortcut={{ modifiers: ["cmd"], key: "[" }} onAction={goUp} />
+                  <Action
+                    title="Go up"
+                    icon={Icon.ArrowUp}
+                    shortcut={{ modifiers: ["cmd"], key: "[" }}
+                    onAction={goUp}
+                  />
                 )}
               </ActionPanel>
             }
@@ -218,9 +308,10 @@ export default function ImportGitHubCommand() {
   );
 }
 
-function generatePlaceholderLayout(keyCount: number): BoardProfile["physicalLayout"] {
+function generatePlaceholderLayout(
+  keyCount: number,
+): BoardProfile["physicalLayout"] {
   const cols = Math.ceil(Math.sqrt(keyCount * 2));
-  const rows = Math.ceil(keyCount / cols);
   return Array.from({ length: keyCount }, (_, i) => ({
     x: i % cols,
     y: Math.floor(i / cols),

@@ -1,4 +1,10 @@
-import { Action, ActionPanel, Detail, environment, LaunchProps } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Detail,
+  environment,
+  LaunchProps,
+} from "@raycast/api";
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { getActiveBoard } from "../lib/storage/active-board";
@@ -8,7 +14,9 @@ interface QuickLayerArgs {
   layer?: string;
 }
 
-export default function QuickLayerCommand(props: LaunchProps<{ arguments: QuickLayerArgs }>) {
+export default function QuickLayerCommand(
+  props: LaunchProps<{ arguments: QuickLayerArgs }>,
+) {
   const requestedLayer = parseInt(props.arguments.layer ?? "0", 10) || 0;
   const [board, setBoard] = useState<BoardProfile>();
   const [isLoading, setIsLoading] = useState(true);

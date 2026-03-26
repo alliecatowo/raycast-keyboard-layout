@@ -30,7 +30,10 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
         <Detail.Metadata>
           <Detail.Metadata.Label title="Board" text={board.name} />
           <Detail.Metadata.Label title="Keyboard" text={board.keyboard} />
-          <Detail.Metadata.Label title="Current Layer" text={`${layer?.name} (${layerIndex + 1}/${board.layers.length})`} />
+          <Detail.Metadata.Label
+            title="Current Layer"
+            text={`${layer?.name} (${layerIndex + 1}/${board.layers.length})`}
+          />
           <Detail.Metadata.Separator />
           <Detail.Metadata.TagList title="Layers">
             {board.layers.map((l) => (
@@ -42,7 +45,10 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
             ))}
           </Detail.Metadata.TagList>
           <Detail.Metadata.Separator />
-          <Detail.Metadata.Label title="Firmware" text={board.firmware.toUpperCase()} />
+          <Detail.Metadata.Label
+            title="Firmware"
+            text={board.firmware.toUpperCase()}
+          />
           <Detail.Metadata.Label title="Layout" text={board.layoutKey} />
         </Detail.Metadata>
       }
@@ -53,7 +59,10 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
               <Action
                 key={l.index}
                 title={`Show ${l.name}`}
-                shortcut={{ modifiers: ["cmd"], key: String(l.index + 1) as "1" }}
+                shortcut={{
+                  modifiers: ["cmd"],
+                  key: String(l.index + 1) as "1",
+                }}
                 onAction={() => setLayerIndex(l.index)}
               />
             ))}
@@ -62,7 +71,9 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
             <Action
               title="Next Layer"
               shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() => setLayerIndex((i) => Math.min(i + 1, board.layers.length - 1))}
+              onAction={() =>
+                setLayerIndex((i) => Math.min(i + 1, board.layers.length - 1))
+              }
             />
             <Action
               title="Previous Layer"

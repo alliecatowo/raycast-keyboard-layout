@@ -17,6 +17,7 @@ import {
   readBoardSettings,
   readKeymapHash,
   readVialKeyboard,
+  readZmkKeyboard,
 } from "../lib/vial/client";
 import { getFirmwareConfig } from "../lib/firmware/config";
 import AddBoardCommand from "./add-board";
@@ -57,9 +58,9 @@ export default function ShowLayoutCommand() {
         }
         setBoard(active);
 
-        // Try to read RGB state if board supports it
+        // Try to read settings if board supports it
         const fwConfig = getFirmwareConfig(active.firmware);
-        if (fwConfig.hasRgbControl) {
+        if (fwConfig.hasRgbControl && active.devicePath) {
           try {
             const data = await readBoardSettings();
             if (data.rgb) {
@@ -93,17 +94,29 @@ export default function ShowLayoutCommand() {
     let lastHash = "";
     const interval = setInterval(async () => {
       try {
-        if (board.firmware === "zmk") {
-          // ZMK: use check_unsaved_changes
-          // For now, skip — needs port path stored in board profile
-        } else {
-          // Vial: use keymap hash
+        if (!board.devicePath) return;
+
+        const boardFw = getFirmwareConfig(board.firmware);
+        if (boardFw.hasUsbSettings) {
+          // Vial/VIA: use keymap hash (fast, doesn't need full re-read)
           const { hash } = await readKeymapHash();
           if (lastHash && hash !== lastHash) {
-            const updated = await readVialKeyboard();
+            const updated = await readVialKeyboard(board.devicePath);
+            updated.id = board.id;
+            updated.name = board.name;
             setBoard(updated);
           }
           lastHash = hash;
+        } else {
+          // ZMK: re-read full keymap and compare
+          const updated = await readZmkKeyboard(board.devicePath);
+          const newHash = JSON.stringify(updated.layers.map((l) => l.keycodes));
+          if (lastHash && newHash !== lastHash) {
+            updated.id = board.id;
+            updated.name = board.name;
+            setBoard(updated);
+          }
+          lastHash = newHash;
         }
       } catch {
         // Board disconnected — stop polling silently
@@ -324,7 +337,10 @@ export default function ShowLayoutCommand() {
                 shortcut={{ modifiers: ["cmd"], key: "r" }}
                 onAction={async () => {
                   try {
-                    const updated = await readVialKeyboard(board.devicePath);
+                    const refreshFw = getFirmwareConfig(board.firmware);
+                    const updated = refreshFw.hasUsbSettings
+                      ? await readVialKeyboard(board.devicePath)
+                      : await readZmkKeyboard(board.devicePath!);
                     updated.id = board.id;
                     updated.name = board.name;
                     setBoard(updated);

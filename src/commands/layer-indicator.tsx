@@ -25,6 +25,8 @@ export default function LayerIndicatorCommand() {
   // Try to detect active layer by polling matrix state
   async function pollLayerState() {
     if (!board) return;
+    const fwConfig = getFirmwareConfig(board.firmware);
+    if (!fwConfig.hasMatrixState) return;
 
     try {
       const state = await readMatrixState();

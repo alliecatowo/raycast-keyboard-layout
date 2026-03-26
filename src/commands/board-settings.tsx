@@ -16,6 +16,7 @@ import {
   writeBoardSetting,
   writeRgb,
   readLockStatus,
+  readZmkLockStatus,
 } from "../lib/vial/client";
 import { getActiveBoard } from "../lib/storage/active-board";
 import { updateBoard } from "../lib/storage/boards";
@@ -101,9 +102,11 @@ export default function BoardSettingsCommand() {
             setIsConnected(true);
 
             // Try lock status
-            if (fwConfig.hasLockDetection) {
+            if (fwConfig.hasLockDetection && activeBoard.devicePath) {
               try {
-                const lock = await readLockStatus();
+                const lock = fwConfig.hasUsbSettings
+                  ? await readLockStatus()
+                  : await readZmkLockStatus(activeBoard.devicePath);
                 setLockStatus(lock);
               } catch {
                 /* not critical */

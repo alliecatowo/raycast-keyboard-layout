@@ -13,6 +13,7 @@ import {
   getAdapterForDevice,
   type DetectedDevice as FwDevice,
 } from "../lib/firmware";
+import { getFirmwareConfig } from "../lib/firmware/config";
 import { saveBoard } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import BoardDetailView from "./board-detail-view";
@@ -95,7 +96,7 @@ export default function AddBoardCommand() {
               key={device.path}
               icon={Icon.Keyboard}
               title={device.name || device.product || "Keyboard"}
-              subtitle={device.firmware.toUpperCase()}
+              subtitle={getFirmwareConfig(device.firmware).displayName}
               accessories={[{ text: device.manufacturer }]}
               actions={
                 <ActionPanel>

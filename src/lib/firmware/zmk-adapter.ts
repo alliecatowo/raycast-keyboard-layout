@@ -1,5 +1,10 @@
 import { BoardProfile } from "../types";
-import { detectZmkDevices, readZmkKeyboard } from "../vial/client";
+import {
+  detectZmkDevices,
+  readZmkKeyboard,
+  readZmkLockStatus,
+  writeZmkLayerName,
+} from "../vial/client";
 import { DetectedDevice, FirmwareAdapter } from "./adapter";
 
 export class ZmkAdapter implements FirmwareAdapter {
@@ -22,5 +27,13 @@ export class ZmkAdapter implements FirmwareAdapter {
 
   async readBoard(device: DetectedDevice): Promise<BoardProfile> {
     return readZmkKeyboard(device.path);
+  }
+
+  async getLockStatus(portPath: string) {
+    return readZmkLockStatus(portPath);
+  }
+
+  async setLayerName(portPath: string, layerId: number, name: string) {
+    return writeZmkLayerName(portPath, layerId, name);
   }
 }

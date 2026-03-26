@@ -114,7 +114,7 @@ export default function LayerIndicatorCommand() {
         <MenuBarExtra.Item title="Keyboard" subtitle={board.keyboard} />
         <MenuBarExtra.Item
           title="Firmware"
-          subtitle={board.firmware.toUpperCase()}
+          subtitle={getFirmwareConfig(board.firmware).displayName}
         />
         <MenuBarExtra.Item
           title="Connection"

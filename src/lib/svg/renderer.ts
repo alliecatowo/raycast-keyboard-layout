@@ -159,7 +159,32 @@ export function generateSvg(
   return result;
 }
 
-/** Clear the SVG cache (call when board data changes) */
+/** Clear the SVG cache and delete stale files */
 export function clearSvgCache(): void {
   svgCache.clear();
+  cleanupStaleSvgs();
 }
+
+/** Remove SVG files older than 1 hour from the temp directory */
+function cleanupStaleSvgs(): void {
+  try {
+    if (!fs.existsSync(TMP_DIR)) return;
+    const files = fs.readdirSync(TMP_DIR);
+    const now = Date.now();
+    const maxAge = 60 * 60 * 1000; // 1 hour
+
+    for (const file of files) {
+      if (!file.endsWith(".svg")) continue;
+      const filePath = path.join(TMP_DIR, file);
+      try {
+        const stat = fs.statSync(filePath);
+        if (now - stat.mtimeMs > maxAge) {
+          fs.unlinkSync(filePath);
+        }
+      } catch { /* ignore individual file errors */ }
+    }
+  } catch { /* ignore cleanup errors */ }
+}
+
+// Run cleanup on module load (once per session)
+cleanupStaleSvgs();

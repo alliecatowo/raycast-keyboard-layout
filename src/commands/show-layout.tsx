@@ -5,8 +5,7 @@ import { getActiveBoard } from "../lib/storage/active-board";
 import { getBoards } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import { generateSvg } from "../lib/svg/renderer";
-import ImportKeymapCommand from "./import-keymap";
-import DetectBoardCommand from "./detect-board";
+import AddBoardCommand from "./add-board";
 
 export default function ShowLayoutCommand() {
   const [board, setBoard] = useState<BoardProfile | undefined>();
@@ -37,11 +36,10 @@ export default function ShowLayoutCommand() {
   if (noBoards && !isLoading) {
     return (
       <Detail
-        markdown={`# Welcome to Keyboard Layout Visualizer\n\nNo boards loaded yet.\n\n**Plug in your Vial keyboard** and use Detect Keyboard to read it automatically, or import a QMK keymap.json file.`}
+        markdown={`# Welcome to Keyboard Layout Visualizer\n\nNo boards loaded yet.\n\n**Plug in your keyboard** and add it — supports Vial (USB HID) and ZMK Studio (serial), or import a keymap file.`}
         actions={
           <ActionPanel>
-            <Action.Push title="Detect Keyboard (USB)" icon={Icon.Plug} target={<DetectBoardCommand />} />
-            <Action.Push title="Import Keymap File" icon={Icon.Document} target={<ImportKeymapCommand />} />
+            <Action.Push title="Add Board" icon={Icon.Plus} target={<AddBoardCommand />} />
           </ActionPanel>
         }
       />
@@ -139,9 +137,9 @@ export default function ShowLayoutCommand() {
           )}
           <ActionPanel.Section title="Actions">
             <Action.Push
-              title="Import New Board"
+              title="Add Board"
               icon={Icon.Plus}
-              target={<ImportKeymapCommand />}
+              target={<AddBoardCommand />}
               shortcut={{ modifiers: ["cmd"], key: "n" }}
             />
             <Action.CopyToClipboard

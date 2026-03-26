@@ -21,6 +21,8 @@ declare namespace Preferences {
   export type ManageBoards = ExtensionPreferences & {}
   /** Preferences accessible in the `import-keymap` command */
   export type ImportKeymap = ExtensionPreferences & {}
+  /** Preferences accessible in the `add-board` command */
+  export type AddBoard = ExtensionPreferences & {}
   /** Preferences accessible in the `detect-board` command */
   export type DetectBoard = ExtensionPreferences & {}
   /** Preferences accessible in the `quick-layer` command */
@@ -38,6 +40,8 @@ declare namespace Arguments {
   export type ManageBoards = {}
   /** Arguments passed to the `import-keymap` command */
   export type ImportKeymap = {}
+  /** Arguments passed to the `add-board` command */
+  export type AddBoard = {}
   /** Arguments passed to the `detect-board` command */
   export type DetectBoard = {}
   /** Arguments passed to the `quick-layer` command */

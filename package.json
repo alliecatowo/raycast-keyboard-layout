@@ -45,11 +45,18 @@
       "keywords": ["import", "add", "qmk", "keymap"]
     },
     {
+      "name": "add-board",
+      "title": "Add Board",
+      "description": "Detect a keyboard over USB or import a keymap file",
+      "mode": "view",
+      "keywords": ["add", "detect", "import", "usb", "vial", "zmk", "scan", "connect"]
+    },
+    {
       "name": "detect-board",
       "title": "Detect Keyboard",
-      "description": "Auto-detect and read your Vial keyboard over USB",
+      "description": "Auto-detect and read your Vial or ZMK keyboard over USB",
       "mode": "view",
-      "keywords": ["detect", "usb", "vial", "scan", "connect", "plug"]
+      "keywords": ["detect", "usb", "vial", "zmk", "scan", "connect", "plug"]
     },
     {
       "name": "quick-layer",

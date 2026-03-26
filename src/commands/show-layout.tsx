@@ -46,7 +46,26 @@ export default function ShowLayoutCommand() {
   if (noBoards && !isLoading) {
     return (
       <Detail
-        markdown="# Welcome to Keyboard Layout Visualizer\n\nNo boards loaded yet.\n\n**Plug in your keyboard** and add it — supports Vial and ZMK Studio, or import a keymap file."
+        markdown={[
+          "# Keyboard Layout Visualizer",
+          "",
+          "No boards loaded yet. Here's how to get started:",
+          "",
+          "### USB Detection (recommended)",
+          "1. Plug in your **Vial** or **ZMK Studio** keyboard",
+          "2. Press Enter to **Add Board** — it'll auto-detect over USB",
+          "",
+          "### File Import",
+          "- Import a QMK `keymap.json` from QMK Configurator",
+          "- Import a ZMK `.keymap` from your config repo",
+          "- Or browse a public GitHub repo for your keymap",
+          "",
+          "### No custom keyboard?",
+          "This extension is designed for programmable keyboards with",
+          "multiple layers (QMK, ZMK, Vial). Standard keyboards don't",
+          "have layers to visualize — but if you're thinking about",
+          "getting into the hobby, check out [r/ErgoMechKeyboards](https://reddit.com/r/ErgoMechKeyboards)!",
+        ].join("\n")}
         actions={
           <ActionPanel>
             <Action.Push title="Add Board" icon={Icon.Plus} target={<AddBoardCommand />} />

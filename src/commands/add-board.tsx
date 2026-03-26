@@ -92,7 +92,26 @@ export default function AddBoardCommand() {
         </List.Section>
       )}
 
-      <List.Section title={devices.length > 0 ? "Other Options" : "Add a Board"}>
+      {!isScanning && devices.length === 0 && (
+        <List.Section title="No Keyboards Detected">
+          <List.Item
+            icon={Icon.ExclamationMark}
+            title="No Vial or ZMK Studio boards found"
+            subtitle="Make sure your board is plugged in via USB"
+          />
+          <List.Item
+            icon={Icon.ArrowClockwise}
+            title="Scan Again"
+            actions={
+              <ActionPanel>
+                <Action title="Scan" icon={Icon.ArrowClockwise} onAction={scan} />
+              </ActionPanel>
+            }
+          />
+        </List.Section>
+      )}
+
+      <List.Section title={devices.length > 0 ? "Other Options" : "Import Instead"}>
         <List.Item
           icon={Icon.Document}
           title="Import from File"
@@ -113,18 +132,6 @@ export default function AddBoardCommand() {
             </ActionPanel>
           }
         />
-        {!isScanning && devices.length === 0 && (
-          <List.Item
-            icon={Icon.ArrowClockwise}
-            title="Scan Again"
-            subtitle="No keyboards detected — try unplugging and replugging"
-            actions={
-              <ActionPanel>
-                <Action title="Scan" icon={Icon.ArrowClockwise} onAction={scan} />
-              </ActionPanel>
-            }
-          />
-        )}
       </List.Section>
     </List>
   );

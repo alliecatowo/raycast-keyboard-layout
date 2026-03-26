@@ -10,7 +10,7 @@ import AddBoardCommand from "./add-board";
 export default function ShowLayoutCommand() {
   const [board, setBoard] = useState<BoardProfile | undefined>();
   const [allBoards, setAllBoards] = useState<BoardProfile[]>([]);
-  const [layerIndex, setLayerIndex] = useState(0);
+  const [focusLayer, setFocusLayer] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [noBoards, setNoBoards] = useState(false);
 
@@ -53,42 +53,60 @@ export default function ShowLayoutCommand() {
   async function switchBoard(b: BoardProfile) {
     await setActiveBoardId(b.id);
     setBoard(b);
-    setLayerIndex(0);
+    setFocusLayer(null);
   }
 
   const appearance = environment.appearance;
-  const layer = board.layers[layerIndex];
-  let markdown = "";
 
-  try {
-    const result = generateSvg(board.physicalLayout, {
-      appearance,
-      layerIndex,
-      layers: board.layers,
-      showGhostKeys: true,
-    });
-    markdown = `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${result.width})`;
-  } catch (e) {
-    markdown = `# Error\n\nCould not render layout: ${e instanceof Error ? e.message : "Unknown error"}`;
+  // Build markdown with ALL layers stacked, or just the focused one
+  let markdown = "";
+  const layersToRender = focusLayer !== null ? [focusLayer] : board.layers.map((l) => l.index);
+
+  for (const layerIdx of layersToRender) {
+    const layer = board.layers[layerIdx];
+    if (!layer) continue;
+
+    try {
+      const result = generateSvg(board.physicalLayout, {
+        appearance,
+        layerIndex: layerIdx,
+        layers: board.layers,
+        showGhostKeys: true,
+      });
+      if (focusLayer === null) {
+        // All layers mode — add layer name as header
+        markdown += `### ${layer.name}\n\n`;
+      }
+      markdown += `![${layer.name}](${result.filePath}?raycast-width=${result.width})\n\n`;
+    } catch (e) {
+      markdown += `### ${layer.name}\n\n*Error rendering: ${e instanceof Error ? e.message : "unknown"}*\n\n`;
+    }
   }
+
+  const navTitle = focusLayer !== null
+    ? `${board.name} — ${board.layers[focusLayer]?.name}`
+    : `${board.name} — All Layers`;
 
   return (
     <Detail
-      navigationTitle={`${board.name} — ${layer?.name ?? `Layer ${layerIndex}`}`}
+      navigationTitle={navTitle}
       markdown={markdown}
       isLoading={isLoading}
       metadata={
         <Detail.Metadata>
           <Detail.Metadata.Label title="Board" text={board.name} />
           <Detail.Metadata.Label title="Keyboard" text={board.keyboard} />
-          <Detail.Metadata.Label title="Current Layer" text={`${layer?.name} (${layerIndex + 1}/${board.layers.length})`} />
+          <Detail.Metadata.Label
+            title="View"
+            text={focusLayer !== null ? `${board.layers[focusLayer]?.name} (${focusLayer + 1}/${board.layers.length})` : `All ${board.layers.length} layers`}
+          />
           <Detail.Metadata.Separator />
           <Detail.Metadata.TagList title="Layers">
             {board.layers.map((l) => (
               <Detail.Metadata.TagList.Item
                 key={l.index}
                 text={l.name}
-                color={l.index === layerIndex ? "#007AFF" : undefined}
+                color={focusLayer === l.index ? "#007AFF" : undefined}
               />
             ))}
           </Detail.Metadata.TagList>
@@ -99,13 +117,19 @@ export default function ShowLayoutCommand() {
       }
       actions={
         <ActionPanel>
-          <ActionPanel.Section title="Layers">
+          <ActionPanel.Section title="View">
+            <Action
+              title="Show All Layers"
+              icon={Icon.List}
+              shortcut={{ modifiers: ["cmd"], key: "0" }}
+              onAction={() => setFocusLayer(null)}
+            />
             {board.layers.map((l) => (
               <Action
                 key={l.index}
-                title={`Show ${l.name}`}
+                title={`Focus ${l.name}`}
                 shortcut={{ modifiers: ["cmd"], key: String(l.index + 1) as "1" }}
-                onAction={() => setLayerIndex(l.index)}
+                onAction={() => setFocusLayer(l.index)}
               />
             ))}
           </ActionPanel.Section>
@@ -113,12 +137,26 @@ export default function ShowLayoutCommand() {
             <Action
               title="Next Layer"
               shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() => setLayerIndex((i) => Math.min(i + 1, board.layers.length - 1))}
+              onAction={() => {
+                if (focusLayer === null) {
+                  setFocusLayer(0);
+                } else {
+                  setFocusLayer(Math.min(focusLayer + 1, board.layers.length - 1));
+                }
+              }}
             />
             <Action
               title="Previous Layer"
               shortcut={{ modifiers: ["cmd"], key: "[" }}
-              onAction={() => setLayerIndex((i) => Math.max(i - 1, 0))}
+              onAction={() => {
+                if (focusLayer === null) {
+                  setFocusLayer(board.layers.length - 1);
+                } else if (focusLayer === 0) {
+                  setFocusLayer(null);
+                } else {
+                  setFocusLayer(focusLayer - 1);
+                }
+              }}
             />
           </ActionPanel.Section>
           {allBoards.length > 1 && (
@@ -142,31 +180,10 @@ export default function ShowLayoutCommand() {
               target={<AddBoardCommand />}
               shortcut={{ modifiers: ["cmd"], key: "n" }}
             />
-            <Action.CopyToClipboard
-              title="Copy Layer SVG"
-              shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-              content={(() => {
-                try {
-                  return generateSvg(board.physicalLayout, {
-                    appearance,
-                    layerIndex,
-                    layers: board.layers,
-                    showGhostKeys: true,
-                  }).svg;
-                } catch {
-                  return "";
-                }
-              })()}
-            />
             <Action.Open
               title="Open Vial"
               target="vial"
               shortcut={{ modifiers: ["cmd", "shift"], key: "v" }}
-            />
-            <Action.OpenInBrowser
-              title="Open QMK Configurator"
-              url={`https://config.qmk.fm/#/${board.keyboard}`}
-              shortcut={{ modifiers: ["cmd", "shift"], key: "q" }}
             />
           </ActionPanel.Section>
         </ActionPanel>

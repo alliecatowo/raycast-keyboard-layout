@@ -81,16 +81,17 @@ export function renderKey(params: KeyRenderParams): string {
 
   // Determine font size based on label length
   const label = parsed.label;
-  let fontSize = 13;
-  if (label.length === 1) fontSize = 15;
-  else if (label.length <= 3) fontSize = 13;
-  else if (label.length <= 5) fontSize = 11;
+  let fontSize = 14;
+  if (label.length === 1) fontSize = 17;
+  else if (label.length <= 3) fontSize = 14;
+  else if (label.length <= 5) fontSize = 12;
+  else if (label.length <= 8) fontSize = 10;
   else fontSize = 9;
 
   const opacity = isGhost ? ' opacity="0.5"' : "";
 
   // Primary label (centered)
-  const textY = parsed.holdLabel ? centerY - 2 : centerY + 1;
+  const textY = parsed.holdLabel ? centerY - 3 : centerY + 1;
   lines.push(
     `    <text x="${centerX}" y="${textY}" text-anchor="middle" dominant-baseline="central" ` +
       `font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" ` +
@@ -99,12 +100,12 @@ export function renderKey(params: KeyRenderParams): string {
 
   // Hold label (bottom-right, smaller)
   if (parsed.holdLabel && !isGhost) {
-    const holdX = x + width - KEYCAP_INSET - 4;
-    const holdY = y + height - KEYCAP_INSET - 6;
+    const holdX = x + width - KEYCAP_INSET - 5;
+    const holdY = y + height - KEYCAP_INSET - 7;
     lines.push(
       `    <text x="${holdX}" y="${holdY}" text-anchor="end" dominant-baseline="auto" ` +
         `font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" ` +
-        `font-size="9" fill="${palette.secondaryText}">${esc(parsed.holdLabel)}</text>`,
+        `font-size="10" fill="${palette.secondaryText}">${esc(parsed.holdLabel)}</text>`,
     );
   }
 

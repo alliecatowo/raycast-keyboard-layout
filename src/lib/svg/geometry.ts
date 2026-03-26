@@ -1,25 +1,25 @@
 import { PhysicalKey } from "../types";
 
 /** Pixels per key unit (1u = one standard key) */
-export const KEY_UNIT = 54;
+export const KEY_UNIT = 64;
 
 /** Gap between keys in pixels */
-export const KEY_GAP = 4;
+export const KEY_GAP = 5;
 
 /** Corner radius for key rectangles */
-export const KEY_RADIUS = 6;
+export const KEY_RADIUS = 7;
 
 /** Inset of the keycap from the key housing (3D effect) */
 export const KEYCAP_INSET = 3;
 
 /** Padding around the entire SVG */
-export const SVG_PADDING = 16;
+export const SVG_PADDING = 20;
 
 /** Extra gap to insert between split keyboard halves */
-export const SPLIT_GAP = 24;
+export const SPLIT_GAP = 28;
 
 /** Header height for layer name */
-export const HEADER_HEIGHT = 32;
+export const HEADER_HEIGHT = 36;
 
 /** Convert key units to pixels */
 export function toPixels(units: number): number {

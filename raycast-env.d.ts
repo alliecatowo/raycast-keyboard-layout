@@ -19,12 +19,8 @@ declare namespace Preferences {
   export type SearchKeys = ExtensionPreferences & {}
   /** Preferences accessible in the `manage-boards` command */
   export type ManageBoards = ExtensionPreferences & {}
-  /** Preferences accessible in the `import-keymap` command */
-  export type ImportKeymap = ExtensionPreferences & {}
   /** Preferences accessible in the `add-board` command */
   export type AddBoard = ExtensionPreferences & {}
-  /** Preferences accessible in the `detect-board` command */
-  export type DetectBoard = ExtensionPreferences & {}
   /** Preferences accessible in the `quick-layer` command */
   export type QuickLayer = ExtensionPreferences & {}
   /** Preferences accessible in the `import-github` command */
@@ -42,12 +38,8 @@ declare namespace Arguments {
   export type SearchKeys = {}
   /** Arguments passed to the `manage-boards` command */
   export type ManageBoards = {}
-  /** Arguments passed to the `import-keymap` command */
-  export type ImportKeymap = {}
   /** Arguments passed to the `add-board` command */
   export type AddBoard = {}
-  /** Arguments passed to the `detect-board` command */
-  export type DetectBoard = {}
   /** Arguments passed to the `quick-layer` command */
   export type QuickLayer = {
   /** Layer number (0-9) */

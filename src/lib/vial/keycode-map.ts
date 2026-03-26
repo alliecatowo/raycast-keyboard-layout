@@ -128,10 +128,26 @@ const BASIC_KEYCODES: Record<number, string> = {
   0x00e5: "KC_RSFT",
   0x00e6: "KC_RALT",
   0x00e7: "KC_RGUI",
-  // Media
+  // Media keys
+  0x00a5: "KC_MPLY",
+  0x00a6: "KC_MSTP",
+  0x00a7: "KC_MPRV",
   0x00a8: "KC_MUTE",
   0x00a9: "KC_VOLU",
   0x00aa: "KC_VOLD",
+  0x00ab: "KC_MNXT",
+  // macOS / Consumer keycodes
+  0x00b5: "KC_MNXT",
+  0x00b6: "KC_MPRV",
+  0x00b7: "KC_MSTP",
+  0x00cd: "KC_MPLY",
+  0x00d1: "KC_BRMU",  // Brightness up (macOS)
+  0x00d2: "KC_BRMD",  // Brightness down (macOS)
+  0x00d4: "KC_MCTL",  // Mission Control (macOS)
+  0x00d5: "KC_LPAD",  // Launchpad (macOS)
+  0x00e8: "KC_MUTE",
+  0x00e9: "KC_VOLU",
+  0x00ea: "KC_VOLD",
 };
 
 // Shifted symbol display: S(KC_1) → "!" etc.

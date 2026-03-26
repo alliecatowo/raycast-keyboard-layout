@@ -42,6 +42,15 @@ const TO_RE = /^TO\((\d+)\)$/;
 /** Matches one-shot mod: OSM(mod) */
 const OSM_RE = /^OSM\(([^)]+)\)$/;
 
+/** Matches default layer: DF(layer) */
+const DF_RE = /^DF\((\d+)\)$/;
+
+/** Matches RGB keycodes: RGB_TOG, RGB_MOD, etc. */
+const RGB_RE = /^RGB_(\w+)$/;
+
+/** Matches MOD_xxx(KC_yyy) from numeric keycode converter */
+const MOD_WRAP_RE = /^(MOD_\w+)\(([^)]+)\)$/;
+
 /** Modifier aliases for mod-tap shorthand */
 const MOD_TAP_PREFIXES: Record<string, string> = {
   LSFT: "Shift", RSFT: "RShift",
@@ -168,12 +177,48 @@ export function parseKeycode(raw: string): ParsedKeycode {
     return { label: `TO(${toMatch[1]})`, category: "layer", raw: trimmed };
   }
 
+  // Default layer: DF(n)
+  const dfMatch = trimmed.match(DF_RE);
+  if (dfMatch) {
+    return { label: `DF(${dfMatch[1]})`, category: "layer", raw: trimmed };
+  }
+
   // One-shot mod: OSM(mod)
   const osmMatch = trimmed.match(OSM_RE);
   if (osmMatch) {
     const modName = MOD_NAMES[osmMatch[1]] ?? osmMatch[1].replace("MOD_", "");
     return { label: `OS${modName}`, category: "modifier", raw: trimmed };
   }
+
+  // MOD_xxx(KC_yyy) — from numeric keycode converter (shifted keys, etc.)
+  const modWrapMatch = trimmed.match(MOD_WRAP_RE);
+  if (modWrapMatch) {
+    const modName = MOD_NAMES[modWrapMatch[1]] ?? modWrapMatch[1].replace("MOD_", "");
+    const innerKc = lookupKeycode(modWrapMatch[2]);
+    return {
+      label: innerKc?.label ?? modWrapMatch[2].replace("KC_", ""),
+      holdLabel: modName,
+      category: "modifier",
+      raw: trimmed,
+    };
+  }
+
+  // RGB keycodes
+  const rgbMatch = trimmed.match(RGB_RE);
+  if (rgbMatch) {
+    const RGB_LABELS: Record<string, string> = {
+      TOG: "RGB", MOD: "Mode+", RMOD: "Mode-",
+      HUI: "Hue+", HUD: "Hue-", SAI: "Sat+", SAD: "Sat-",
+      VAI: "Bri+", VAD: "Bri-", SPI: "Spd+", SPD: "Spd-",
+    };
+    return { label: RGB_LABELS[rgbMatch[1]] ?? `RGB ${rgbMatch[1]}`, category: "media", raw: trimmed };
+  }
+
+  // System keycodes
+  if (trimmed === "QK_BOOT") return { label: "Boot", category: "system", raw: trimmed };
+  if (trimmed === "QK_RBT") return { label: "Reboot", category: "system", raw: trimmed };
+  if (trimmed === "DB_TOGG") return { label: "Debug", category: "system", raw: trimmed };
+  if (trimmed === "EE_CLR") return { label: "EEClr", category: "system", raw: trimmed };
 
   // Simple keycode lookup
   const kc = lookupKeycode(trimmed);

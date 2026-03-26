@@ -173,6 +173,10 @@ const raw: RawEntry[] = [
   ["KC_EJCT", "Eject", "media"],
   ["KC_BRIU", "Bri+", "media", "Brightness Up"],
   ["KC_BRID", "Bri-", "media", "Brightness Down"],
+  ["KC_BRMU", "Bri+", "media", "Brightness Up Mac"],
+  ["KC_BRMD", "Bri-", "media", "Brightness Down Mac"],
+  ["KC_MCTL", "MCtrl", "system", "Mission Control"],
+  ["KC_LPAD", "LPad", "system", "Launchpad"],
 
   // ── Mouse ──────────────────────────────────────────────
   ["KC_MS_U", "M\u2191", "mouse", "Mouse Up"],

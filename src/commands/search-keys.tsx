@@ -103,7 +103,7 @@ function SearchResultDetail({ board, result }: { board: BoardProfile; result: Ke
       showGhostKeys: true,
       highlightKeys: [result.keyIndex],
     });
-    markdown = `![${result.layerName}](${svgResult.filePath}?raycast-width=${Math.min(svgResult.width, 500)})`;
+    markdown = `![${result.layerName}](${svgResult.filePath}?raycast-width=${svgResult.width})`;
   } catch {
     markdown = "*Could not render preview*";
   }

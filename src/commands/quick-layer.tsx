@@ -41,7 +41,7 @@ export default function QuickLayerCommand(props: LaunchProps<{ arguments: QuickL
       layers: board.layers,
       showGhostKeys: true,
     });
-    markdown = `![${layer?.name}](${result.filePath}?raycast-width=${Math.min(result.width, 860)})`;
+    markdown = `![${layer?.name}](${result.filePath}?raycast-width=${result.width})`;
   } catch (e) {
     markdown = `Error: ${e instanceof Error ? e.message : "Unknown"}`;
   }

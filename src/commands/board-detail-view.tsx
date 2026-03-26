@@ -17,7 +17,7 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
       layers: board.layers,
       showGhostKeys: true,
     });
-    markdown = `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${Math.min(result.width, 860)})`;
+    markdown = `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${result.width})`;
   } catch (e) {
     markdown = `# Error\n\n${e instanceof Error ? e.message : "Could not render layout"}`;
   }

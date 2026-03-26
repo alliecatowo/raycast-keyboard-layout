@@ -134,6 +134,31 @@ const BASIC_KEYCODES: Record<number, string> = {
   0x00aa: "KC_VOLD",
 };
 
+// Shifted symbol display: S(KC_1) → "!" etc.
+const SHIFTED_SYMBOLS: Record<number, string> = {
+  0x1e: "KC_EXLM",  // !
+  0x1f: "KC_AT",     // @
+  0x20: "KC_HASH",   // #
+  0x21: "KC_DLR",    // $
+  0x22: "KC_PERC",   // %
+  0x23: "KC_CIRC",   // ^
+  0x24: "KC_AMPR",   // &
+  0x25: "KC_ASTR",   // *
+  0x26: "KC_LPRN",   // (
+  0x27: "KC_RPRN",   // )
+  0x2d: "KC_UNDS",   // _
+  0x2e: "KC_PLUS",   // +
+  0x2f: "KC_LCBR",   // {
+  0x30: "KC_RCBR",   // }
+  0x31: "KC_PIPE",   // |
+  0x33: "KC_COLN",   // :
+  0x34: "KC_DQUO",   // "
+  0x35: "KC_TILD",   // ~
+  0x36: "KC_LABK",   // <
+  0x37: "KC_RABK",   // >
+  0x38: "KC_QUES",   // ?
+};
+
 // Modifier bits for mod-tap and layer-tap
 const MOD_BITS: Record<number, string> = {
   0x01: "MOD_LCTL",
@@ -174,9 +199,17 @@ export function numericKeycodeToString(keycode: number): string {
   // 0x6000–0x7FFF: Mod-Tap (MT)
 
   // Mod + basic key (0x0100–0x1FFF)
+  // These are "shifted" or "modified" keycodes: S(KC_1) = !, etc.
   if (keycode >= 0x0100 && keycode <= 0x1fff) {
     const mods = (keycode >> 8) & 0x1f;
     const basic = keycode & 0xff;
+
+    // For Shift + basic key, show the shifted symbol directly
+    if (mods === 0x02) {
+      const shifted = SHIFTED_SYMBOLS[basic];
+      if (shifted) return shifted;
+    }
+
     const basicStr = BASIC_KEYCODES[basic] ?? `0x${basic.toString(16)}`;
     const modStr = MOD_BITS[mods] ?? `MOD(0x${mods.toString(16)})`;
     return `${modStr}(${basicStr})`;
@@ -217,8 +250,13 @@ export function numericKeycodeToString(keycode: number): string {
     return `OSM(${modStr})`;
   }
 
-  // Mod-Tap: MT(mod, kc) — 0x6000–0x7FFF
-  if (keycode >= 0x6000 && keycode <= 0x7fff) {
+  // DF(layer) — 0x5200–0x52FF
+  if (keycode >= 0x5200 && keycode <= 0x52ff) {
+    return `DF(${keycode & 0xff})`;
+  }
+
+  // Mod-Tap: MT(mod, kc) — 0x6000–0x7BFF (stops before system keycodes)
+  if (keycode >= 0x6000 && keycode <= 0x7bff) {
     const mods = (keycode >> 8) & 0x1f;
     const basic = keycode & 0xff;
     const basicStr = BASIC_KEYCODES[basic] ?? `0x${basic.toString(16)}`;
@@ -226,8 +264,30 @@ export function numericKeycodeToString(keycode: number): string {
     return `MT(${modStr}, ${basicStr})`;
   }
 
-  // QK_BOOT (0x5C10 in some versions, 0x7C00 in others)
-  if (keycode === 0x7c00 || keycode === 0x5c10) return "QK_BOOT";
+  // System keycodes 0x7C00+
+  const SYSTEM_KEYCODES: Record<number, string> = {
+    0x7c00: "QK_BOOT",
+    0x7c01: "QK_RBT",
+    0x7c02: "DB_TOGG",
+    0x7c03: "EE_CLR",
+  };
+  if (SYSTEM_KEYCODES[keycode]) return SYSTEM_KEYCODES[keycode];
+
+  // RGB / Backlight keycodes 0x7E00+
+  const RGB_KEYCODES: Record<number, string> = {
+    0x7e00: "RGB_TOG",
+    0x7e01: "RGB_MOD",
+    0x7e02: "RGB_RMOD",
+    0x7e03: "RGB_HUI",
+    0x7e04: "RGB_HUD",
+    0x7e05: "RGB_SAI",
+    0x7e06: "RGB_SAD",
+    0x7e07: "RGB_VAI",
+    0x7e08: "RGB_VAD",
+    0x7e09: "RGB_SPI",
+    0x7e0a: "RGB_SPD",
+  };
+  if (RGB_KEYCODES[keycode]) return RGB_KEYCODES[keycode];
 
   // Fallback: hex representation
   return `0x${keycode.toString(16).toUpperCase().padStart(4, "0")}`;

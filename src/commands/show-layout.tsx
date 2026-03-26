@@ -69,7 +69,7 @@ export default function ShowLayoutCommand() {
       layers: board.layers,
       showGhostKeys: true,
     });
-    markdown = `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${Math.min(result.width, 860)})`;
+    markdown = `![${layer?.name ?? "Layout"}](${result.filePath}?raycast-width=${result.width})`;
   } catch (e) {
     markdown = `# Error\n\nCould not render layout: ${e instanceof Error ? e.message : "Unknown error"}`;
   }

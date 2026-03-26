@@ -16,7 +16,7 @@ export const KEYCAP_INSET = 3;
 export const SVG_PADDING = 10;
 
 /** Extra gap to insert between split keyboard halves */
-export const SPLIT_GAP = 10;
+export const SPLIT_GAP = 4;
 
 /** Header height for layer name (0 = no header in SVG) */
 export const HEADER_HEIGHT = 0;

@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import * as path from "path";
-import { environment } from "@raycast/api";
 import { PhysicalKey, RenderOptions, SvgResult } from "../types";
 import { parseKeycode } from "../keymap/keycodes";
 import { resolveEffectiveKey } from "../keymap/layer-resolver";
@@ -110,15 +109,14 @@ export function generateSvg(
 
   const svg = lines.join("\n");
 
-  // Write to file in supportPath
-  const fileName = `layout-layer-${options.layerIndex}.svg`;
-  const filePath = path.join(environment.supportPath, fileName);
-
-  // Ensure support directory exists
-  if (!fs.existsSync(environment.supportPath)) {
-    fs.mkdirSync(environment.supportPath, { recursive: true });
+  // Write SVG to a temp path with no spaces (spaces break markdown image syntax)
+  const tmpDir = path.join("/tmp", "keyviz");
+  if (!fs.existsSync(tmpDir)) {
+    fs.mkdirSync(tmpDir, { recursive: true });
   }
 
+  const fileName = `layout-layer-${options.layerIndex}.svg`;
+  const filePath = path.join(tmpDir, fileName);
   fs.writeFileSync(filePath, svg, "utf-8");
 
   return { svg, filePath, width: totalWidth, height: totalHeight };

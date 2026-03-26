@@ -4,7 +4,7 @@
  * Vial USB HID RAW Reader
  *
  * Standalone helper process that communicates with Vial-enabled keyboards
- * over USB HID RAW protocol. Outputs JSON to stdout.
+ * over USB HID RAW protocol. Outputs JSON to stdout, logs to stderr.
  *
  * Usage:
  *   node vial-reader.js detect     — List connected Vial devices
@@ -13,7 +13,19 @@
  */
 
 const HID = require("node-hid");
-const LZMA = require("lzma");
+const { lzmaDecompress } = require("./lzma-decompress");
+
+// ── Logging ──────────────────────────────────────────────
+
+const VERBOSE = process.env.VIAL_DEBUG === "1";
+
+function log(...args) {
+  process.stderr.write("[vial] " + args.join(" ") + "\n");
+}
+
+function debug(...args) {
+  if (VERBOSE) log("[debug]", ...args);
+}
 
 // ── Constants ────────────────────────────────────────────
 
@@ -26,7 +38,6 @@ const READ_TIMEOUT_MS = 1000;
 
 // VIA commands
 const CMD_VIA_GET_PROTOCOL_VERSION = 0x01;
-const CMD_VIA_GET_KEYCODE = 0x04;
 const CMD_VIA_GET_LAYER_COUNT = 0x11;
 const CMD_VIA_KEYMAP_GET_BUFFER = 0x12;
 
@@ -49,112 +60,141 @@ function createPacket(...bytes) {
 
 function sendAndReceive(device, ...bytes) {
   const packet = createPacket(...bytes);
+  debug(`TX: [${bytes.map((b) => "0x" + b.toString(16).padStart(2, "0")).join(", ")}]`);
+
   device.write(Array.from(packet));
 
-  // Synchronous read with timeout
   const response = device.readTimeout(READ_TIMEOUT_MS);
   if (!response || response.length === 0) {
     throw new Error("No response from keyboard (timeout)");
   }
-  return Buffer.from(response);
+  const buf = Buffer.from(response);
+  debug(`RX: ${buf.length} bytes [${buf.subarray(0, 8).toString("hex")}...]`);
+  return buf;
 }
 
 // ── Device Detection ─────────────────────────────────────
 
 function findVialDevices() {
   const allDevices = HID.devices();
-  return allDevices.filter(
+  debug(`Found ${allDevices.length} total HID devices`);
+
+  const vialDevices = allDevices.filter(
     (d) =>
       d.serialNumber &&
       d.serialNumber.includes(VIAL_SERIAL_MAGIC) &&
       d.usagePage === VIAL_USAGE_PAGE &&
       d.usage === VIAL_USAGE
   );
+
+  log(`Found ${vialDevices.length} Vial device(s)`);
+  for (const d of vialDevices) {
+    log(`  ${d.product} (${d.manufacturer}) @ ${d.path}`);
+  }
+
+  return vialDevices;
 }
 
 // ── Protocol Commands ────────────────────────────────────
 
 function getViaProtocolVersion(device) {
   const resp = sendAndReceive(device, CMD_VIA_GET_PROTOCOL_VERSION);
-  return (resp[1] << 8) | resp[2];
+  const version = (resp[1] << 8) | resp[2];
+  log(`VIA protocol version: ${version}`);
+  return version;
 }
 
 function getVialKeyboardId(device) {
-  const resp = sendAndReceive(
-    device,
-    CMD_VIA_VIAL_PREFIX,
-    CMD_VIAL_GET_KEYBOARD_ID
-  );
-  const vialProtocol =
-    resp[0] | (resp[1] << 8) | (resp[2] << 16) | (resp[3] << 24);
-  const uid = resp.slice(4, 12);
+  const resp = sendAndReceive(device, CMD_VIA_VIAL_PREFIX, CMD_VIAL_GET_KEYBOARD_ID);
+  const vialProtocol = resp[0] | (resp[1] << 8) | (resp[2] << 16) | (resp[3] << 24);
+  const uid = resp.subarray(4, 12);
+  log(`Vial protocol: ${vialProtocol}, UID: ${uid.toString("hex")}`);
   return { vialProtocol, uid: uid.toString("hex") };
 }
 
 function getDefinitionSize(device) {
-  const resp = sendAndReceive(
-    device,
-    CMD_VIA_VIAL_PREFIX,
-    CMD_VIAL_GET_SIZE
-  );
-  return resp[0] | (resp[1] << 8) | (resp[2] << 16) | (resp[3] << 24);
+  const resp = sendAndReceive(device, CMD_VIA_VIAL_PREFIX, CMD_VIAL_GET_SIZE);
+  const size = resp[0] | (resp[1] << 8) | (resp[2] << 16) | (resp[3] << 24);
+  log(`Definition size: ${size} bytes (${Math.ceil(size / PACKET_SIZE)} blocks)`);
+  return size;
 }
 
 function getDefinitionBlock(device, blockIndex) {
-  const resp = sendAndReceive(
+  return sendAndReceive(
     device,
     CMD_VIA_VIAL_PREFIX,
     CMD_VIAL_GET_DEFINITION,
     blockIndex & 0xff,
     (blockIndex >> 8) & 0xff
   );
-  return resp;
 }
 
 function getLayerCount(device) {
   const resp = sendAndReceive(device, CMD_VIA_GET_LAYER_COUNT);
-  return resp[1];
+  const count = resp[1];
+  log(`Layer count: ${count}`);
+  return count;
 }
 
 function getKeymapBuffer(device, offset, size) {
   const resp = sendAndReceive(
     device,
     CMD_VIA_KEYMAP_GET_BUFFER,
-    (offset >> 8) & 0xff, // offset high byte
-    offset & 0xff, // offset low byte
+    (offset >> 8) & 0xff,
+    offset & 0xff,
     size
   );
-  // Keycode data starts at byte 4
-  return resp.slice(4, 4 + size);
+  return resp.subarray(4, 4 + size);
 }
 
 // ── High-Level Operations ────────────────────────────────
 
 function readDefinition(device) {
   const size = getDefinitionSize(device);
+
+  if (size <= 0 || size > 1000000) {
+    throw new Error(`Invalid definition size: ${size}`);
+  }
+
   const blocks = Math.ceil(size / PACKET_SIZE);
   const compressed = Buffer.alloc(blocks * PACKET_SIZE);
 
+  log(`Fetching ${blocks} blocks...`);
   for (let i = 0; i < blocks; i++) {
     const block = getDefinitionBlock(device, i);
     block.copy(compressed, i * PACKET_SIZE);
   }
 
-  // Trim to actual size
-  const trimmed = compressed.slice(0, size);
+  const trimmed = compressed.subarray(0, size);
 
-  // Decompress LZMA
-  const decompressed = LZMA.decompress(Array.from(trimmed));
-  const jsonStr =
-    typeof decompressed === "string"
-      ? decompressed
-      : Buffer.from(decompressed).toString("utf-8");
+  // Log first bytes for debugging
+  log(`Compressed data: ${trimmed.length} bytes, header: [${trimmed.subarray(0, 16).toString("hex")}]`);
 
-  return JSON.parse(jsonStr);
+  // Decompress - Vial uses LZMA compression
+  let jsonStr;
+  try {
+    jsonStr = lzmaDecompress(trimmed);
+  } catch (e) {
+    log(`LZMA decompression failed: ${e.message}`);
+    log(`First 32 bytes hex: ${trimmed.subarray(0, 32).toString("hex")}`);
+    throw new Error(`Failed to decompress keyboard definition: ${e.message}`);
+  }
+
+  log(`Decompressed: ${jsonStr.length} chars`);
+  debug(`Definition JSON preview: ${jsonStr.substring(0, 200)}...`);
+
+  try {
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    log(`JSON parse failed: ${e.message}`);
+    log(`Raw string preview: ${jsonStr.substring(0, 500)}`);
+    throw new Error(`Failed to parse keyboard definition JSON: ${e.message}`);
+  }
 }
 
 function readKeymap(device, layers, rows, cols) {
   const totalBytes = layers * rows * cols * 2;
+  log(`Reading keymap: ${layers} layers × ${rows} rows × ${cols} cols = ${totalBytes} bytes`);
   const keymapBuffer = Buffer.alloc(totalBytes);
 
   for (let offset = 0; offset < totalBytes; offset += BUFFER_FETCH_CHUNK) {
@@ -163,7 +203,6 @@ function readKeymap(device, layers, rows, cols) {
     chunk.copy(keymapBuffer, offset);
   }
 
-  // Parse into layers of keycodes
   const result = [];
   for (let layer = 0; layer < layers; layer++) {
     const layerKeycodes = [];
@@ -177,6 +216,7 @@ function readKeymap(device, layers, rows, cols) {
     result.push(layerKeycodes);
   }
 
+  log(`Read ${result.length} layers, ${result[0]?.length || 0} keycodes per layer`);
   return result;
 }
 
@@ -190,7 +230,7 @@ function parseKleLayout(kleData) {
   let currentY = 0;
 
   for (const row of kleData) {
-    if (!Array.isArray(row)) continue; // skip metadata objects
+    if (!Array.isArray(row)) continue;
 
     currentX = 0;
     let currentW = 1;
@@ -201,14 +241,12 @@ function parseKleLayout(kleData) {
 
     for (const item of row) {
       if (typeof item === "object" && item !== null) {
-        // Property object — modifies subsequent keys
         if ("x" in item) currentX += item.x;
         if ("y" in item) currentY += item.y;
         if ("w" in item) currentW = item.w;
         if ("h" in item) currentH = item.h;
         if ("r" in item) {
           currentR = item.r;
-          // When r changes, position resets to rx,ry
           if ("rx" in item) currentRx = item.rx;
           if ("ry" in item) currentRy = item.ry;
           currentX = currentRx;
@@ -218,12 +256,10 @@ function parseKleLayout(kleData) {
           if ("ry" in item) currentRy = item.ry;
         }
       } else if (typeof item === "string") {
-        // Key legend — in Vial, this is "row,col" matrix address
         const match = item.match(/^(\d+),(\d+)$/);
         const matrixRow = match ? parseInt(match[1], 10) : -1;
         const matrixCol = match ? parseInt(match[2], 10) : -1;
 
-        // Skip decal keys (marked with d:true in previous props)
         if (matrixRow >= 0 && matrixCol >= 0) {
           keys.push({
             x: currentX,
@@ -246,17 +282,8 @@ function parseKleLayout(kleData) {
     currentY += 1;
   }
 
+  log(`Parsed ${keys.length} physical keys from KLE layout`);
   return keys;
-}
-
-// ── QMK Keycode → String Conversion ─────────────────────
-// Simplified — the Raycast extension has the full database.
-// Here we just output the numeric keycode; the extension decodes it.
-
-function keycodeToQmk(keycode) {
-  // We output raw numeric keycodes. The Raycast extension
-  // converts them to QMK string names using its keycode database.
-  return keycode;
 }
 
 // ── Main ─────────────────────────────────────────────────
@@ -265,13 +292,16 @@ function output(data) {
   process.stdout.write(JSON.stringify(data) + "\n");
 }
 
-function error(message) {
+function errorAndExit(message) {
+  log(`ERROR: ${message}`);
   output({ error: message });
   process.exit(1);
 }
 
 const command = process.argv[2] || "detect";
 const devicePath = process.argv[3];
+
+log(`Command: ${command}${devicePath ? ` (device: ${devicePath})` : ""}`);
 
 try {
   if (command === "detect") {
@@ -287,46 +317,40 @@ try {
       })),
     });
   } else if (command === "read") {
-    // Find or open device
     let device;
     if (devicePath) {
+      log(`Opening device at path: ${devicePath}`);
       device = new HID.HID(devicePath);
     } else {
       const devices = findVialDevices();
       if (devices.length === 0) {
-        error("No Vial keyboard detected. Make sure your keyboard is plugged in and has Vial firmware.");
+        errorAndExit("No Vial keyboard detected. Make sure your keyboard is plugged in and has Vial firmware.");
       }
+      log(`Opening first device: ${devices[0].product}`);
       device = new HID.HID(devices[0].path);
     }
 
     try {
-      // Get protocol versions
       const viaVersion = getViaProtocolVersion(device);
       const { vialProtocol, uid } = getVialKeyboardId(device);
 
-      // Read keyboard definition (physical layout, matrix info)
       const definition = readDefinition(device);
       const rows = definition.matrix?.rows || 0;
       const cols = definition.matrix?.cols || 0;
+      log(`Matrix: ${rows} × ${cols}`);
 
       if (!rows || !cols) {
-        error("Invalid keyboard definition: missing matrix dimensions");
+        errorAndExit(`Invalid keyboard definition: matrix is ${rows}×${cols}`);
       }
 
-      // Read layer count and keymap
       const layerCount = getLayerCount(device);
       const keymapRaw = readKeymap(device, layerCount, rows, cols);
 
-      // Parse physical layout from KLE data
       const kleLayout = definition.layouts?.keymap || [];
       const physicalKeys = parseKleLayout(kleLayout);
 
-      // Build matrix position → physical key index mapping
-      // The keymap is ordered by [row][col], but physical keys reference matrix positions
-      const matrixToPhysical = new Map();
-      for (let i = 0; i < physicalKeys.length; i++) {
-        const [mr, mc] = physicalKeys[i].matrix;
-        matrixToPhysical.set(`${mr},${mc}`, i);
+      if (physicalKeys.length === 0) {
+        errorAndExit("No physical keys found in keyboard definition layout");
       }
 
       // Reorder keymap to match physical key order
@@ -341,6 +365,8 @@ try {
         layers.push(orderedKeycodes);
       }
 
+      log(`Success! ${physicalKeys.length} keys, ${layerCount} layers`);
+
       output({
         viaProtocol: viaVersion,
         vialProtocol,
@@ -350,7 +376,7 @@ try {
         productId: definition.productId,
         matrix: { rows, cols },
         layerCount,
-        layers, // Array of arrays of numeric keycodes, ordered by physical position
+        layers,
         physicalLayout: physicalKeys.map((k) => ({
           x: k.x,
           y: k.y,
@@ -366,8 +392,8 @@ try {
       device.close();
     }
   } else {
-    error(`Unknown command: ${command}. Use "detect" or "read".`);
+    errorAndExit(`Unknown command: ${command}. Use "detect" or "read".`);
   }
 } catch (err) {
-  error(err.message || String(err));
+  errorAndExit(err.message || String(err));
 }

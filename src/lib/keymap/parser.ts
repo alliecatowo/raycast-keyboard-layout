@@ -1,3 +1,4 @@
+import * as nodeCrypto from "crypto";
 import { BoardProfile, Layer, QmkKeymapFile } from "../types";
 
 /** Layer name suggestions based on common keycode patterns */
@@ -100,7 +101,7 @@ export function keymapToBoardProfile(
   }));
 
   return {
-    id: crypto.randomUUID(),
+    id: nodeCrypto.randomUUID(),
     name,
     keyboard: keymap.keyboard,
     layoutKey: keymap.layout,

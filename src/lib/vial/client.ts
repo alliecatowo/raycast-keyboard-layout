@@ -1,6 +1,7 @@
 import { execFile } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
+import * as nodeCrypto from "crypto";
 import { environment } from "@raycast/api";
 import { BoardProfile, Layer, PhysicalKey } from "../types";
 import { numericKeycodeToString } from "./keycode-map";
@@ -75,8 +76,20 @@ function runHelper(args: string[]): Promise<unknown> {
     execFile(
       nodePath,
       [helperPath, ...args],
-      { timeout: 15000, env: { ...process.env, NODE_PATH: path.join(helperPath, "..", "node_modules") } },
+      {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          NODE_PATH: path.join(helperPath, "..", "node_modules"),
+          VIAL_DEBUG: "1", // Enable verbose logging
+        },
+      },
       (error, stdout, stderr) => {
+        // Always log stderr for debugging
+        if (stderr) {
+          console.log("[vial-helper]", stderr.trim());
+        }
+
         if (error) {
           // Try to parse error from stdout (helper outputs JSON errors)
           try {
@@ -135,7 +148,7 @@ export async function readVialKeyboard(devicePath?: string): Promise<BoardProfil
   const now = new Date().toISOString();
 
   return {
-    id: crypto.randomUUID(),
+    id: nodeCrypto.randomUUID(),
     name: result.name || "Vial Keyboard",
     keyboard: `vial:${result.uid}`,
     layoutKey: "vial_usb",

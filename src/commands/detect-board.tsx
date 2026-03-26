@@ -1,6 +1,6 @@
 import { Action, ActionPanel, Detail, Icon, List, showToast, Toast, useNavigation } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { detectVialDevices, readVialKeyboard } from "../lib/vial/client";
+import { detectAllDevices, readVialKeyboard, readZmkKeyboard } from "../lib/vial/client";
 import { saveBoard } from "../lib/storage/boards";
 import { setActiveBoardId } from "../lib/storage/active-board";
 import BoardDetailView from "./board-detail-view";
@@ -10,8 +10,10 @@ interface DetectedDevice {
   path: string;
   manufacturer: string;
   product: string;
-  vendorId: number;
-  productId: number;
+  name?: string;
+  vendorId: number | string;
+  productId: number | string;
+  firmware?: string;
 }
 
 export default function DetectBoardCommand() {
@@ -25,10 +27,10 @@ export default function DetectBoardCommand() {
     setIsLoading(true);
     setError(undefined);
     try {
-      const found = await detectVialDevices();
+      const found = await detectAllDevices();
       setDevices(found);
       if (found.length === 0) {
-        setError("No Vial keyboards detected. Make sure your board is plugged in and has Vial firmware.");
+        setError("No keyboards detected. Make sure your board is plugged in and has Vial or ZMK Studio firmware.");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to scan for devices");
@@ -41,16 +43,19 @@ export default function DetectBoardCommand() {
     scan();
   }, []);
 
-  async function handleReadBoard(devicePath?: string) {
+  async function handleReadBoard(device: DetectedDevice) {
     setIsReading(true);
+    const isZmk = device.firmware === "zmk";
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Reading keyboard...",
-      message: "Fetching keymap over USB",
+      message: `Fetching keymap over ${isZmk ? "serial" : "USB HID"}`,
     });
 
     try {
-      const board = await readVialKeyboard(devicePath);
+      const board = isZmk
+        ? await readZmkKeyboard(device.path)
+        : await readVialKeyboard(device.path);
 
       await saveBoard(board);
       await setActiveBoardId(board.id);
@@ -76,7 +81,7 @@ export default function DetectBoardCommand() {
     return (
       <Detail
         isLoading={isLoading}
-        markdown={`# Detect Keyboard\n\n${error}\n\n**Troubleshooting:**\n- Is your keyboard plugged in via USB?\n- Does your keyboard have Vial firmware? Check at [get.vial.today](https://get.vial.today)\n- Try unplugging and replugging the cable\n\nYou can also import a keymap file manually.`}
+        markdown={`# Detect Keyboard\n\n${error}\n\n**Troubleshooting:**\n- Is your keyboard plugged in via USB?\n- **Vial boards**: Must have Vial firmware ([get.vial.today](https://get.vial.today))\n- **ZMK boards**: Must have ZMK Studio enabled in firmware\n- Try unplugging and replugging the cable\n\nYou can also import a keymap file manually.`}
         actions={
           <ActionPanel>
             <Action title="Scan Again" icon={Icon.ArrowClockwise} onAction={scan} />
@@ -93,17 +98,17 @@ export default function DetectBoardCommand() {
         <List.Item
           key={device.path}
           icon={Icon.Keyboard}
-          title={device.product}
-          subtitle={device.manufacturer}
+          title={device.name || device.product}
+          subtitle={`${device.manufacturer}${device.firmware ? ` (${device.firmware.toUpperCase()})` : ""}`}
           accessories={[
-            { text: `${device.vendorId.toString(16).padStart(4, "0")}:${device.productId.toString(16).padStart(4, "0")}` },
+            { text: `${String(device.vendorId)}:${String(device.productId)}` },
           ]}
           actions={
             <ActionPanel>
               <Action
                 title="Read Keymap"
                 icon={Icon.Download}
-                onAction={() => handleReadBoard(device.path)}
+                onAction={() => handleReadBoard(device)}
               />
               <Action title="Scan Again" icon={Icon.ArrowClockwise} onAction={scan} />
               <Action.Push title="Import File Instead" icon={Icon.Document} target={<ImportKeymapCommand />} />

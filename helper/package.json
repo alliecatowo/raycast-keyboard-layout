@@ -5,7 +5,9 @@
   "description": "Standalone helper for USB HID communication with Vial keyboards",
   "main": "vial-reader.js",
   "dependencies": {
+    "lzma": "^2.3.2",
     "node-hid": "^3.1.0",
-    "lzma": "^2.3.2"
+    "protobufjs": "^8.0.0",
+    "serialport": "^13.0.0"
   }
 }

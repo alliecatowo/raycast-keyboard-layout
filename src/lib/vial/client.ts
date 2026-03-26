@@ -53,6 +53,19 @@ interface VialDevice {
   productId: number;
 }
 
+interface ZmkReadResult {
+  firmware: "zmk";
+  name: string;
+  serialNumber: string;
+  physicalLayout: PhysicalKey[];
+  layers: Array<{
+    index: number;
+    name: string;
+    bindings: Array<{ behavior: string; behaviorId: number; param1: number; param2: number }>;
+  }>;
+  behaviorNames: Record<number, string>;
+}
+
 interface VialReadResult {
   viaProtocol: number;
   vialProtocol: number;
@@ -120,10 +133,141 @@ function runHelper(args: string[]): Promise<unknown> {
   });
 }
 
-/** Detect connected Vial keyboards */
+/** Detect connected Vial keyboards (HID) */
 export async function detectVialDevices(): Promise<VialDevice[]> {
-  const result = (await runHelper(["detect"])) as { devices: VialDevice[] };
-  return result.devices;
+  try {
+    const result = (await runHelper(["detect"])) as { devices: VialDevice[] };
+    return result.devices;
+  } catch {
+    return [];
+  }
+}
+
+/** Detect connected ZMK Studio keyboards (serial) */
+export async function detectZmkDevices(): Promise<VialDevice[]> {
+  try {
+    const zmkHelperPath = getHelperPath().replace("vial-reader.js", "zmk-reader.js");
+    const nodePath = findNodeBinary();
+
+    return new Promise((resolve) => {
+      execFile(
+        nodePath,
+        [zmkHelperPath, "detect"],
+        {
+          timeout: 15000,
+          env: {
+            ...process.env,
+            NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
+          },
+        },
+        (error, stdout, stderr) => {
+          if (stderr) console.log("[zmk-helper]", stderr.trim());
+          if (error) { resolve([]); return; }
+          try {
+            const parsed = JSON.parse(stdout);
+            resolve(parsed.devices || []);
+          } catch {
+            resolve([]);
+          }
+        },
+      );
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** Detect ALL connected keyboards (Vial + ZMK) */
+export async function detectAllDevices(): Promise<VialDevice[]> {
+  const [vial, zmk] = await Promise.all([detectVialDevices(), detectZmkDevices()]);
+  return [...vial, ...zmk];
+}
+
+/** Read a ZMK Studio keyboard over serial */
+export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
+  const zmkHelperPath = getHelperPath().replace("vial-reader.js", "zmk-reader.js");
+  const nodePath = findNodeBinary();
+
+  const result = await new Promise<ZmkReadResult>((resolve, reject) => {
+    execFile(
+      nodePath,
+      [zmkHelperPath, "read", portPath],
+      {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
+        },
+      },
+      (error, stdout, stderr) => {
+        if (stderr) console.log("[zmk-helper]", stderr.trim());
+        if (error) {
+          try {
+            const parsed = JSON.parse(stdout);
+            if (parsed.error) { reject(new Error(parsed.error)); return; }
+          } catch { /* ignore */ }
+          reject(new Error(stderr || error.message));
+          return;
+        }
+        try {
+          const parsed = JSON.parse(stdout);
+          if (parsed.error) { reject(new Error(parsed.error)); return; }
+          resolve(parsed as ZmkReadResult);
+        } catch {
+          reject(new Error("Failed to parse ZMK helper output"));
+        }
+      },
+    );
+  });
+
+  // Convert ZMK bindings to display-friendly keycodes
+  const layers: Layer[] = result.layers.map((layer, index) => ({
+    index,
+    name: layer.name || `Layer ${index}`,
+    keycodes: layer.bindings.map((b) => {
+      // Build a ZMK-style binding string for our existing parser
+      if (b.behavior === "key_press" || b.behavior === "&kp") {
+        return numericKeycodeToString(b.param1);
+      }
+      if (b.behavior === "momentary_layer" || b.behavior === "&mo") {
+        return `MO(${b.param1})`;
+      }
+      if (b.behavior === "layer_tap" || b.behavior === "&lt") {
+        return `LT(${b.param1}, ${numericKeycodeToString(b.param2)})`;
+      }
+      if (b.behavior === "mod_tap" || b.behavior === "&mt") {
+        return `MT(${numericKeycodeToString(b.param1)}, ${numericKeycodeToString(b.param2)})`;
+      }
+      if (b.behavior === "transparent" || b.behavior === "&trans") {
+        return "KC_TRNS";
+      }
+      if (b.behavior === "none" || b.behavior === "&none") {
+        return "KC_NO";
+      }
+      if (b.behavior === "toggle_layer" || b.behavior === "&tog") {
+        return `TG(${b.param1})`;
+      }
+      if (b.behavior === "to_layer" || b.behavior === "&to") {
+        return `TO(${b.param1})`;
+      }
+      // Fallback: show behavior name
+      return b.behavior + (b.param1 ? ` ${b.param1}` : "") + (b.param2 ? ` ${b.param2}` : "");
+    }),
+  }));
+
+  const now = new Date().toISOString();
+
+  return {
+    id: nodeCrypto.randomUUID(),
+    name: result.name || "ZMK Keyboard",
+    keyboard: `zmk:${result.serialNumber || "unknown"}`,
+    layoutKey: "zmk_studio",
+    firmware: "zmk",
+    layers,
+    physicalLayout: result.physicalLayout,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 /** Read the full keymap and layout from a Vial keyboard */

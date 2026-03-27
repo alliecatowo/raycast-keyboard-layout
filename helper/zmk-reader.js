@@ -63,7 +63,7 @@ message RequestResponse {
 
 message Notification {
   oneof subsystem {
-    CoreNotification core = 1;
+    CoreNotification core = 2;
   }
 }
 
@@ -108,10 +108,10 @@ enum LockState {
 message KeymapRequest {
   oneof request_type {
     bool get_keymap = 1;
-    SetLayerPropsRequest set_layer_props = 3;
-    bool get_physical_layouts = 4;
-    bool check_unsaved_changes = 7;
-    bool save_changes = 8;
+    SetLayerPropsRequest set_layer_props = 12;
+    bool get_physical_layouts = 6;
+    bool check_unsaved_changes = 3;
+    bool save_changes = 4;
   }
 }
 
@@ -123,10 +123,10 @@ message SetLayerPropsRequest {
 message KeymapResponse {
   oneof response_type {
     Keymap get_keymap = 1;
-    SetLayerPropsResponse set_layer_props = 3;
-    PhysicalLayouts get_physical_layouts = 4;
-    bool check_unsaved_changes = 7;
-    bool save_changes = 8;
+    SetLayerPropsResponse set_layer_props = 12;
+    PhysicalLayouts get_physical_layouts = 6;
+    bool check_unsaved_changes = 3;
+    bool save_changes = 4;
   }
 }
 
@@ -221,7 +221,10 @@ function frameDecode(data) {
   let escaped = false;
 
   for (const byte of data) {
-    if (byte === FRAMING_SOF) {
+    if (escaped && current !== null) {
+      current.push(byte);
+      escaped = false;
+    } else if (byte === FRAMING_SOF) {
       current = [];
       escaped = false;
     } else if (byte === FRAMING_EOF && current !== null) {
@@ -230,12 +233,7 @@ function frameDecode(data) {
     } else if (byte === FRAMING_ESC && current !== null) {
       escaped = true;
     } else if (current !== null) {
-      if (escaped) {
-        current.push(byte);
-        escaped = false;
-      } else {
-        current.push(byte);
-      }
+      current.push(byte);
     }
   }
 

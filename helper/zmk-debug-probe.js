@@ -107,7 +107,7 @@ message RequestResponse {
 
 message Notification {
   oneof subsystem {
-    CoreNotification core = 1;
+    CoreNotification core = 2;
   }
 }
 
@@ -152,10 +152,10 @@ enum LockState {
 message KeymapRequest {
   oneof request_type {
     bool get_keymap = 1;
-    SetLayerPropsRequest set_layer_props = 3;
-    bool get_physical_layouts = 4;
-    bool check_unsaved_changes = 7;
-    bool save_changes = 8;
+    bool check_unsaved_changes = 3;
+    bool save_changes = 4;
+    bool get_physical_layouts = 6;
+    SetLayerPropsRequest set_layer_props = 12;
   }
 }
 
@@ -167,14 +167,18 @@ message SetLayerPropsRequest {
 message KeymapResponse {
   oneof response_type {
     Keymap get_keymap = 1;
-    SetLayerPropsResponse set_layer_props = 3;
-    PhysicalLayouts get_physical_layouts = 4;
-    bool check_unsaved_changes = 7;
-    bool save_changes = 8;
+    bool check_unsaved_changes = 3;
+    bool save_changes = 4;
+    PhysicalLayouts get_physical_layouts = 6;
+    SetLayerPropsResponse set_layer_props = 12;
   }
 }
 
-message SetLayerPropsResponse {}
+enum SetLayerPropsResponse {
+  SET_LAYER_PROPS_RESP_OK = 0;
+  SET_LAYER_PROPS_RESP_ERR_GENERIC = 1;
+  SET_LAYER_PROPS_RESP_ERR_INVALID_ID = 2;
+}
 
 message Keymap {
   repeated Layer layers = 1;
@@ -217,30 +221,58 @@ message KeyPhysicalAttrs {
 // ── Behaviors ──
 message BehaviorRequest {
   oneof request_type {
-    uint32 list_all_behaviors = 1;
-    BehaviorBindingParametersRequest get_behavior_details = 2;
+    bool list_all_behaviors = 1;
+    GetBehaviorDetailsRequest get_behavior_details = 2;
   }
 }
 
-message BehaviorBindingParametersRequest {
-  sint32 behavior_id = 1;
+message GetBehaviorDetailsRequest {
+  uint32 behavior_id = 1;
 }
 
 message BehaviorResponse {
   oneof response_type {
-    BehaviorList list_all_behaviors = 1;
-    BehaviorBindingParametersResponse get_behavior_details = 2;
+    ListAllBehaviorsResponse list_all_behaviors = 1;
+    GetBehaviorDetailsResponse get_behavior_details = 2;
   }
 }
 
-message BehaviorList {
-  repeated sint32 behavior_ids = 1;
+message ListAllBehaviorsResponse {
+  repeated uint32 behaviors = 1;
 }
 
-message BehaviorBindingParametersResponse {
-  sint32 behavior_id = 1;
+message GetBehaviorDetailsResponse {
+  uint32 id = 1;
   string display_name = 2;
-  string friendly_name = 3;
+  repeated BehaviorBindingParametersSet metadata = 3;
+}
+
+message BehaviorBindingParametersSet {
+  repeated BehaviorParameterValueDescription param1 = 1;
+  repeated BehaviorParameterValueDescription param2 = 2;
+}
+
+message BehaviorParameterValueDescriptionRange {
+  int32 min = 1;
+  int32 max = 2;
+}
+
+message BehaviorParameterNil {}
+message BehaviorParameterLayerId {}
+message BehaviorParameterHidUsage {
+  uint32 keyboard_max = 1;
+  uint32 consumer_max = 2;
+}
+
+message BehaviorParameterValueDescription {
+  string name = 1;
+  oneof value_type {
+    BehaviorParameterNil nil = 2;
+    uint32 constant = 3;
+    BehaviorParameterValueDescriptionRange range = 4;
+    BehaviorParameterHidUsage hid_usage = 5;
+    BehaviorParameterLayerId layer_id = 6;
+  }
 }
 `;
 
@@ -414,6 +446,39 @@ class ZmkConnection {
   }
 }
 
+// ── Behavior display_name → ZMK binding shorthand ───────────
+// Maps the display_name string returned by the firmware to the familiar
+// ZMK keymap binding prefix. This lets callers render "&kp A" style labels.
+const DISPLAY_NAME_TO_ZMK_SHORTHAND = {
+  // Standard behaviors
+  "Key Press":          "&kp",
+  "Momentary Layer":    "&mo",
+  "Layer-Tap":          "&lt",
+  "Mod-Tap":            "&mt",
+  "Toggle Layer":       "&tog",
+  "To Layer":           "&to",
+  "Sticky Key":         "&sk",
+  "Sticky Layer":       "&sl",
+  "Transparent":        "&trans",
+  "None":               "&none",
+  "Caps Word":          "&caps_word",
+  "Key Repeat":         "&key_repeat",
+  "Key Toggle":         "&kt",
+  "Grave/Escape":       "&gresc",
+  "Reset":              "&sys_reset",
+  "Bootloader":         "&bootloader",
+  "Studio Unlock":      "&studio_unlock",
+  // Connectivity
+  "Bluetooth":          "&bt",
+  "Output Selection":   "&out",
+  "External Power":     "&ext_power",
+  // RGB/lighting
+  "Underglow":          "&rgb_ug",
+  "Backlight":          "&bl",
+  // Mouse
+  "Mouse Key Press":    "&mkp",
+};
+
 // ── Main ────────────────────────────────────────────────────
 
 async function main() {
@@ -492,14 +557,17 @@ async function main() {
   log("=== Step 5: list_all_behaviors ===");
   const behaviorListResp = await conn.rpc({ behaviors: { list_all_behaviors: 0 } });
   const behaviorList = behaviorListResp.behaviors?.list_all_behaviors;
-  log(`Behavior IDs: ${JSON.stringify(behaviorList?.behavior_ids)}`);
-  result.behaviorIds = behaviorList?.behavior_ids || [];
+  log(`Behavior IDs: ${JSON.stringify(behaviorList?.behaviors)}`);
+  result.behaviorIds = behaviorList?.behaviors || [];
 
   // ── 6. Get details for each behavior ────────────────────
   log("=== Step 6: get_behavior_details for each ===");
   const behaviorDetails = {};
 
-  // Collect all behavior IDs from both the list and the keymap bindings
+  // Collect behavior IDs from both the authoritative list AND keymap bindings.
+  // list_all_behaviors returns uint32 (positive). Keymap bindings use sint32
+  // so negative IDs appear for behaviors compiled with negative DTS offsets.
+  // The firmware accepts any behavior_id in GetBehaviorDetailsRequest.
   const allBehaviorIds = new Set(result.behaviorIds.map(Number));
   if (keymap?.layers) {
     for (const layer of keymap.layers) {
@@ -517,12 +585,40 @@ async function main() {
       const bResp = await conn.rpc({ behaviors: { get_behavior_details: { behavior_id: bid } } });
       const details = bResp.behaviors?.get_behavior_details;
       if (details) {
+        // Parse metadata: each set describes valid param1/param2 combinations.
+        // Each BehaviorParameterValueDescription has a name + value_type oneof.
+        const parsedMetadata = (details.metadata || []).map((set) => ({
+          param1: (set.param1 || []).map((p) => ({
+            name: p.name,
+            type: p.nil != null ? "nil"
+              : p.constant != null ? "constant"
+              : p.range != null ? "range"
+              : p.hid_usage != null ? "hid_usage"
+              : p.layer_id != null ? "layer_id"
+              : "unknown",
+            value: p.constant ?? p.range ?? p.hid_usage ?? null,
+          })),
+          param2: (set.param2 || []).map((p) => ({
+            name: p.name,
+            type: p.nil != null ? "nil"
+              : p.constant != null ? "constant"
+              : p.range != null ? "range"
+              : p.hid_usage != null ? "hid_usage"
+              : p.layer_id != null ? "layer_id"
+              : "unknown",
+            value: p.constant ?? p.range ?? p.hid_usage ?? null,
+          })),
+        }));
+
+        const displayName = details.display_name || null;
+        const zmkShorthand = displayName ? (DISPLAY_NAME_TO_ZMK_SHORTHAND[displayName] || null) : null;
         behaviorDetails[bid] = {
-          behaviorId: details.behavior_id,
-          displayName: details.display_name || null,
-          friendlyName: details.friendly_name || null,
+          behaviorId: Number(details.id),
+          displayName,
+          zmkShorthand,
+          metadata: parsedMetadata,
         };
-        log(`  ${bid}: display="${details.display_name}" friendly="${details.friendly_name}"`);
+        log(`  ${bid}: display="${displayName}" zmk="${zmkShorthand}" metadataSets=${parsedMetadata.length}`);
       }
     } catch (err) {
       log(`  ${bid}: FAILED - ${err.message}`);
@@ -542,7 +638,7 @@ async function main() {
       const bid = Number(b.behavior_id);
       const details = behaviorDetails[bid];
       return {
-        behavior: details?.displayName || details?.friendlyName || `b${bid}`,
+        behavior: details?.zmkShorthand || details?.displayName || `b${bid}`,
         behaviorId: bid,
         param1: b.param1 || 0,
         param2: b.param2 || 0,

@@ -265,21 +265,39 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
     name: layer.name || `Layer ${index}`,
     keycodes: layer.bindings.map((b) => {
       const n = b.behavior;
-      // Match behavior names from board (display names) + shorthand + fallback IDs
-      if (n === "key_press" || n === "&kp" || n === "Key Press" || n === "b8") return zp(b.param1);
-      if (n === "momentary_layer" || n === "&mo" || n === "Momentary Layer" || n === "b12") return `MO(${b.param1})`;
-      if (n === "layer_tap" || n === "&lt" || n === "Layer-Tap" || n === "b13") return `LT(${b.param1}, ${zp(b.param2)})`;
-      if (n === "mod_tap" || n === "&mt" || n === "Mod-Tap" || n === "b9") return `MT(${zp(b.param1)}, ${zp(b.param2)})`;
-      if (n === "transparent" || n === "&trans" || n === "Transparent" || n === "b23") return "KC_TRNS";
-      if (n === "none" || n === "&none" || n === "None" || n === "b2") return "KC_NO";
-      if (n === "toggle_layer" || n === "&tog" || n === "Toggle Layer") return `TG(${b.param1})`;
-      if (n === "to_layer" || n === "&to" || n === "To Layer") return `TO(${b.param1})`;
-      if (n === "sticky_key" || n === "&sk" || n === "Sticky Key") return `OSM(${zp(b.param1)})`;
-      if (n === "sticky_layer" || n === "&sl" || n === "Sticky Layer") return `OSL(${b.param1})`;
-      if (n === "Bootloader" || n === "b25" || n === "&bootloader") return "QK_BOOT";
-      if (n === "Reset" || n === "b27" || n === "&sys_reset") return "QK_RBT";
-      // Behavior 65535 = empty/unassigned slot
-      if (n === "b65535" || b.behaviorId === 65535) return "KC_NO";
+      // Match behavior display names from the board
+      // The helper returns display names when it can fetch them,
+      // or "bN" fallback when it can't. For unknown behaviors,
+      // try to infer from the binding structure.
+      const isKp = n === "Key Press" || n === "key_press" || n === "&kp";
+      const isMo = n === "Momentary Layer" || n === "momentary_layer" || n === "&mo";
+      const isLt = n === "Layer-Tap" || n === "layer_tap" || n === "&lt";
+      const isMt = n === "Mod-Tap" || n === "mod_tap" || n === "&mt";
+      const isTrans = n === "Transparent" || n === "transparent" || n === "&trans";
+      const isNone = n === "None" || n === "none" || n === "&none";
+      const isTog = n === "Toggle Layer" || n === "toggle_layer" || n === "&tog";
+      const isTo = n === "To Layer" || n === "to_layer" || n === "&to";
+      const isSk = n === "Sticky Key" || n === "sticky_key" || n === "&sk";
+      const isSl = n === "Sticky Layer" || n === "sticky_layer" || n === "&sl";
+      const isBoot = n === "Bootloader" || n === "&bootloader";
+      const isReset = n === "Reset" || n === "&sys_reset";
+
+      // For unknown behaviors (bN fallback), infer from params
+      const isUnknown = n.startsWith("b") && /^b\d+$/.test(n);
+      const hasHidParam = b.param1 > 0x10000; // HID usage codes are > 0x10000
+
+      if (isKp || (isUnknown && hasHidParam && b.param2 === 0)) return zp(b.param1);
+      if (isMo) return `MO(${b.param1})`;
+      if (isLt) return `LT(${b.param1}, ${zp(b.param2)})`;
+      if (isMt) return `MT(${zp(b.param1)}, ${zp(b.param2)})`;
+      if (isTrans) return "KC_TRNS";
+      if (isNone || b.behaviorId === 65535) return "KC_NO";
+      if (isTog) return `TG(${b.param1})`;
+      if (isTo) return `TO(${b.param1})`;
+      if (isSk) return `OSM(${zp(b.param1)})`;
+      if (isSl) return `OSL(${b.param1})`;
+      if (isBoot) return "QK_BOOT";
+      if (isReset) return "QK_RBT";
       return n + (b.param1 ? ` ${b.param1}` : "") + (b.param2 ? ` ${b.param2}` : "");
     }),
   }));

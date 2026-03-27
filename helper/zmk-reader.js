@@ -173,30 +173,29 @@ message KeyPhysicalAttrs {
 // Behaviors
 message BehaviorRequest {
   oneof request_type {
-    uint32 list_all_behaviors = 1;
-    BehaviorBindingParametersRequest get_behavior_details = 2;
+    bool list_all_behaviors = 1;
+    GetBehaviorDetailsRequest get_behavior_details = 2;
   }
 }
 
-message BehaviorBindingParametersRequest {
-  sint32 behavior_id = 1;
+message GetBehaviorDetailsRequest {
+  uint32 behavior_id = 1;
 }
 
 message BehaviorResponse {
   oneof response_type {
-    BehaviorList list_all_behaviors = 1;
-    BehaviorBindingParametersResponse get_behavior_details = 2;
+    ListAllBehaviorsResponse list_all_behaviors = 1;
+    GetBehaviorDetailsResponse get_behavior_details = 2;
   }
 }
 
-message BehaviorList {
-  repeated sint32 behavior_ids = 1;
+message ListAllBehaviorsResponse {
+  repeated uint32 behaviors = 1;
 }
 
-message BehaviorBindingParametersResponse {
-  sint32 behavior_id = 1;
+message GetBehaviorDetailsResponse {
+  uint32 id = 1;
   string display_name = 2;
-  string friendly_name = 3;
 }
 `;
 
@@ -488,7 +487,7 @@ async function main() {
           if (bResp) {
             const details = bResp.behaviors?.get_behavior_details;
             if (details) {
-              behaviorNames[bid] = details.display_name || details.friendly_name || `behavior_${bid}`;
+              behaviorNames[bid] = details.display_name || `behavior_${bid}`;
               log(`  Behavior ${bid}: ${behaviorNames[bid]}`);
             }
           }

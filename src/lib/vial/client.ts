@@ -265,16 +265,21 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
     name: layer.name || `Layer ${index}`,
     keycodes: layer.bindings.map((b) => {
       const n = b.behavior;
-      if (n === "key_press" || n === "&kp" || n === "Key Press") return zp(b.param1);
-      if (n === "momentary_layer" || n === "&mo" || n === "Momentary Layer") return `MO(${b.param1})`;
-      if (n === "layer_tap" || n === "&lt" || n === "Layer-Tap") return `LT(${b.param1}, ${zp(b.param2)})`;
-      if (n === "mod_tap" || n === "&mt" || n === "Mod-Tap") return `MT(${zp(b.param1)}, ${zp(b.param2)})`;
-      if (n === "transparent" || n === "&trans" || n === "Transparent") return "KC_TRNS";
-      if (n === "none" || n === "&none" || n === "None") return "KC_NO";
+      // Match behavior names from board (display names) + shorthand + fallback IDs
+      if (n === "key_press" || n === "&kp" || n === "Key Press" || n === "b8") return zp(b.param1);
+      if (n === "momentary_layer" || n === "&mo" || n === "Momentary Layer" || n === "b12") return `MO(${b.param1})`;
+      if (n === "layer_tap" || n === "&lt" || n === "Layer-Tap" || n === "b13") return `LT(${b.param1}, ${zp(b.param2)})`;
+      if (n === "mod_tap" || n === "&mt" || n === "Mod-Tap" || n === "b9") return `MT(${zp(b.param1)}, ${zp(b.param2)})`;
+      if (n === "transparent" || n === "&trans" || n === "Transparent" || n === "b23") return "KC_TRNS";
+      if (n === "none" || n === "&none" || n === "None" || n === "b2") return "KC_NO";
       if (n === "toggle_layer" || n === "&tog" || n === "Toggle Layer") return `TG(${b.param1})`;
       if (n === "to_layer" || n === "&to" || n === "To Layer") return `TO(${b.param1})`;
       if (n === "sticky_key" || n === "&sk" || n === "Sticky Key") return `OSM(${zp(b.param1)})`;
       if (n === "sticky_layer" || n === "&sl" || n === "Sticky Layer") return `OSL(${b.param1})`;
+      if (n === "Bootloader" || n === "b25" || n === "&bootloader") return "QK_BOOT";
+      if (n === "Reset" || n === "b27" || n === "&sys_reset") return "QK_RBT";
+      // Behavior 65535 = empty/unassigned slot
+      if (n === "b65535" || b.behaviorId === 65535) return "KC_NO";
       return n + (b.param1 ? ` ${b.param1}` : "") + (b.param2 ? ` ${b.param2}` : "");
     }),
   }));

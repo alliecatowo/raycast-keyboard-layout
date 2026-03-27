@@ -22,30 +22,60 @@ function log(...args) {
 
 // ── Constants ────────────────────────────────────────────
 
-const BAUD_RATE = 12500;
+const BAUD_RATE = 9600;
 const FRAMING_SOF = 0xab;
 const FRAMING_ESC = 0xac;
 const FRAMING_EOF = 0xad;
-const READ_TIMEOUT_MS = 2000;
+const READ_TIMEOUT_MS = 8000;
 
 // ── Protobuf Schema (inline — matches zmk-studio-messages) ──
 
 const protoSchema = `
 syntax = "proto3";
 
+// Wire-level: Request is sent, Response is received
+// Response wraps either a RequestResponse or Notification
 message Request {
+  uint32 request_id = 1;
   oneof subsystem {
-    CoreRequest core = 1;
+    CoreRequest core = 3;
+    BehaviorRequest behaviors = 4;
     KeymapRequest keymap = 5;
-    BehaviorRequest behaviors = 6;
   }
 }
 
 message Response {
+  oneof type {
+    RequestResponse request_response = 1;
+    Notification notification = 2;
+  }
+}
+
+message RequestResponse {
+  uint32 request_id = 1;
   oneof subsystem {
-    CoreResponse core = 1;
+    MetaResponse meta = 2;
+    CoreResponse core = 3;
+    BehaviorResponse behaviors = 4;
     KeymapResponse keymap = 5;
-    BehaviorResponse behaviors = 6;
+  }
+}
+
+message Notification {
+  oneof subsystem {
+    CoreNotification core = 1;
+  }
+}
+
+message CoreNotification {
+  oneof notification_type {
+    uint32 lock_state_changed = 1;
+  }
+}
+
+message MetaResponse {
+  oneof type {
+    uint32 simple_error = 2;
   }
 }
 
@@ -240,12 +270,16 @@ function sendAndReceive(port, requestBuf) {
 
     port.on("data", (chunk) => {
       chunks.push(chunk);
-      // Check if we have a complete frame (ends with EOF)
       const combined = Buffer.concat(chunks);
+      // Wait a short moment after getting data to collect any additional frames
+      // (notification + response may arrive back-to-back)
       if (combined.includes(FRAMING_EOF)) {
         clearTimeout(timer);
-        port.removeAllListeners("data");
-        resolve(combined);
+        // Give 100ms for any additional frames to arrive
+        setTimeout(() => {
+          port.removeAllListeners("data");
+          resolve(Buffer.concat(chunks));
+        }, 100);
       }
     });
 
@@ -278,7 +312,71 @@ async function main() {
   // Parse protobuf schema
   const root = protobuf.parse(protoSchema, { keepCase: true }).root;
   const Request = root.lookupType("Request");
-  const Response = root.lookupType("Response");
+  const ResponseMsg = root.lookupType("Response");
+
+  let requestCounter = 0;
+
+  // Encode a Request with auto-incrementing request_id
+  function encodeRequest(subsystemObj) {
+    requestCounter++;
+    const req = Request.create({ request_id: requestCounter, ...subsystemObj });
+    return Request.encode(req).finish();
+  }
+
+  // Decode a Response, unwrapping the RequestResponse envelope
+  // Returns the inner RequestResponse fields (core, keymap, etc.)
+  // Also handles Notifications (returns { notification: ... })
+  function decodeResponse(buf) {
+    const resp = ResponseMsg.decode(buf).toJSON();
+
+    if (resp.request_response) {
+      // Check for meta errors
+      if (resp.request_response.meta?.simple_error) {
+        const errCode = resp.request_response.meta.simple_error;
+        const errNames = { 0: "GENERIC", 1: "UNLOCK_REQUIRED", 2: "RPC_NOT_FOUND", 3: "MSG_DECODE_FAILED" };
+        throw new Error(`ZMK RPC error: ${errNames[errCode] || errCode}`);
+      }
+      return resp.request_response;
+    }
+    if (resp.notification) {
+      return { _isNotification: true, notification: resp.notification };
+    }
+    return resp;
+  }
+
+  // Send a request and get the actual response, skipping notifications.
+  // Reads multiple frames if needed (notification + response arrive together).
+  async function rpcCall(port, subsystemObj) {
+    const reqPayload = encodeRequest(subsystemObj);
+    const rawResp = await sendAndReceive(port, reqPayload);
+    const frames = frameDecode(rawResp);
+
+    for (const frame of frames) {
+      const decoded = decodeResponse(frame);
+      if (decoded._isNotification) {
+        log(`  (skipping notification: ${JSON.stringify(decoded.notification)})`);
+        continue;
+      }
+      return decoded;
+    }
+
+    // If all frames were notifications, try reading more data
+    log("  All frames were notifications, waiting for response...");
+    const moreResp = await new Promise((resolve) => {
+      const chunks = [];
+      const handler = (chunk) => { chunks.push(chunk); const c = Buffer.concat(chunks); if (c.includes(0xAD)) { port.removeListener("data", handler); resolve(c); } };
+      port.on("data", handler);
+      setTimeout(() => { port.removeListener("data", handler); resolve(Buffer.concat(chunks)); }, READ_TIMEOUT_MS);
+    });
+
+    const moreFrames = frameDecode(moreResp);
+    for (const frame of moreFrames) {
+      const decoded = decodeResponse(frame);
+      if (!decoded._isNotification) return decoded;
+    }
+
+    throw new Error("No valid response (only notifications received)");
+  }
 
   if (command === "detect") {
     log("Scanning serial ports for ZMK boards...");
@@ -300,30 +398,33 @@ async function main() {
 
         try {
           // Send getDeviceInfo request
-          const reqPayload = Request.encode(
-            Request.create({ core: { get_device_info: true } })
-          ).finish();
+          const reqPayload = encodeRequest({ core: { get_device_info: true } });
 
           const rawResponse = await sendAndReceive(port, reqPayload);
           const frames = frameDecode(rawResponse);
 
           if (frames.length > 0) {
-            const resp = Response.decode(frames[0]);
-            if (resp.core && resp.core.get_device_info) {
-              const info = resp.core.get_device_info;
-              log(`  ZMK device found: ${info.name}`);
-              zmkDevices.push({
-                path,
-                name: info.name || "ZMK Keyboard",
-                serialNumber: info.serial_number
-                  ? Buffer.from(info.serial_number).toString("hex")
-                  : "",
-                manufacturer: portInfo.manufacturer || "",
-                vendorId: portInfo.vendorId || "",
-                productId: portInfo.productId || "",
-                firmware: "zmk",
-              });
-            }
+            const resp = decodeResponse(frames[0]);
+            log(`  Response: ${JSON.stringify(resp)}`);
+
+            // decodeResponse returns the inner RequestResponse fields
+            const info = resp.core?.get_device_info;
+            const boardName = info?.name
+              || (portInfo.manufacturer === "ZMK Project" ? portInfo.manufacturer : null)
+              || "ZMK Keyboard";
+
+            log(`  ZMK device found: ${boardName}`);
+            zmkDevices.push({
+              path,
+              name: boardName,
+              serialNumber: info?.serial_number
+                ? Buffer.from(info.serial_number).toString("hex")
+                : portInfo.serialNumber || "",
+              manufacturer: portInfo.manufacturer || "",
+              vendorId: portInfo.vendorId || "",
+              productId: portInfo.productId || "",
+              firmware: "zmk",
+            });
           }
         } finally {
           port.close();
@@ -341,30 +442,17 @@ async function main() {
     const port = await openPort(portPath);
 
     try {
-      // 1. Get device info
-      let reqPayload = Request.encode(
-        Request.create({ core: { get_device_info: true } })
-      ).finish();
-      let rawResp = await sendAndReceive(port, reqPayload);
-      let frames = frameDecode(rawResp);
-      if (frames.length === 0) errorAndExit("No response to getDeviceInfo");
-
-      const deviceResp = Response.decode(frames[0]);
+      // 1. Get device info (uses rpcCall which handles notifications)
+      const deviceResp = await rpcCall(port, { core: { get_device_info: true } });
       const deviceInfo = deviceResp.core?.get_device_info;
-      if (!deviceInfo) errorAndExit("Invalid getDeviceInfo response");
-      log(`Device: ${deviceInfo.name}`);
+      const deviceName = deviceInfo?.name || "ZMK Keyboard";
+      log(`Device: ${deviceName}`);
 
       // 2. Get physical layouts
-      reqPayload = Request.encode(
-        Request.create({ keymap: { get_physical_layouts: true } })
-      ).finish();
-      rawResp = await sendAndReceive(port, reqPayload);
-      frames = frameDecode(rawResp);
-      if (frames.length === 0) errorAndExit("No response to getPhysicalLayouts");
-
-      const layoutResp = Response.decode(frames[0]);
+      const layoutResp = await rpcCall(port, { keymap: { get_physical_layouts: true } });
+      log(`Physical layouts response: ${JSON.stringify(layoutResp)}`);
       const physLayouts = layoutResp.keymap?.get_physical_layouts;
-      if (!physLayouts) errorAndExit("Invalid getPhysicalLayouts response");
+      if (!physLayouts) errorAndExit("Invalid getPhysicalLayouts response: " + JSON.stringify(layoutResp));
 
       const activeLayout = physLayouts.layouts[physLayouts.active_layout_index || 0];
       log(`Physical layout: ${activeLayout?.name || "default"}, ${activeLayout?.keys?.length || 0} keys`);
@@ -381,14 +469,7 @@ async function main() {
       }));
 
       // 3. Get keymap
-      reqPayload = Request.encode(
-        Request.create({ keymap: { get_keymap: true } })
-      ).finish();
-      rawResp = await sendAndReceive(port, reqPayload);
-      frames = frameDecode(rawResp);
-      if (frames.length === 0) errorAndExit("No response to getKeymap");
-
-      const keymapResp = Response.decode(frames[0]);
+      const keymapResp = await rpcCall(port, { keymap: { get_keymap: true } });
       const keymap = keymapResp.keymap?.get_keymap;
       if (!keymap) errorAndExit("Invalid getKeymap response");
 
@@ -405,13 +486,8 @@ async function main() {
       const behaviorNames = {};
       for (const bid of behaviorIds) {
         try {
-          reqPayload = Request.encode(
-            Request.create({ behaviors: { get_behavior_details: { behavior_id: bid } } })
-          ).finish();
-          rawResp = await sendAndReceive(port, reqPayload);
-          frames = frameDecode(rawResp);
-          if (frames.length > 0) {
-            const bResp = Response.decode(frames[0]);
+          const bResp = await rpcCall(port, { behaviors: { get_behavior_details: { behavior_id: bid } } });
+          if (bResp) {
             const details = bResp.behaviors?.get_behavior_details;
             if (details) {
               behaviorNames[bid] = details.display_name || details.friendly_name || `behavior_${bid}`;
@@ -456,14 +532,12 @@ async function main() {
 
     const port = await openPort(portPath);
     try {
-      const reqPayload = Request.encode(
-        Request.create({ core: { get_lock_state: true } }),
-      ).finish();
+      const reqPayload = encodeRequest({ core: { get_lock_state: true } });
       const rawResp = await sendAndReceive(port, reqPayload);
       const frames = frameDecode(rawResp);
 
       if (frames.length > 0) {
-        const resp = Response.decode(frames[0]);
+        const resp = decodeResponse(frames[0]);
         const lockState = resp.core?.get_lock_state;
         const isLocked = lockState === 0; // ZMK_STUDIO_CORE_LOCK_STATE_LOCKED = 0
         log(`Lock state: ${isLocked ? "LOCKED" : "UNLOCKED"}`);
@@ -480,15 +554,13 @@ async function main() {
 
     const port = await openPort(portPath);
     try {
-      const reqPayload = Request.encode(
-        Request.create({ keymap: { check_unsaved_changes: true } }),
-      ).finish();
+      const reqPayload = encodeRequest({ keymap: { check_unsaved_changes: true } });
       const rawResp = await sendAndReceive(port, reqPayload);
       const frames = frameDecode(rawResp);
 
       let hasChanges = false;
       if (frames.length > 0) {
-        const resp = Response.decode(frames[0]);
+        const resp = decodeResponse(frames[0]);
         hasChanges = resp.keymap?.check_unsaved_changes === true;
       }
       log(`Unsaved changes: ${hasChanges}`);
@@ -507,19 +579,15 @@ async function main() {
     const port = await openPort(portPath);
     try {
       // Set layer name
-      let reqPayload = Request.encode(
-        Request.create({
+      let reqPayload = encodeRequest({
           keymap: { set_layer_props: { layer_id: layerId, name: newName } },
-        }),
-      ).finish();
+        });
       let rawResp = await sendAndReceive(port, reqPayload);
       let frames = frameDecode(rawResp);
       log(`Set layer ${layerId} name to "${newName}"`);
 
       // Save changes to persist
-      reqPayload = Request.encode(
-        Request.create({ keymap: { save_changes: true } }),
-      ).finish();
+      reqPayload = encodeRequest({ keymap: { save_changes: true } });
       rawResp = await sendAndReceive(port, reqPayload);
       frames = frameDecode(rawResp);
       log("Changes saved");

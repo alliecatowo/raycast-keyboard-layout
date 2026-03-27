@@ -5,6 +5,7 @@ import * as nodeCrypto from "crypto";
 import { environment } from "@raycast/api";
 import { BoardProfile, Layer, PhysicalKey } from "../types";
 import { numericKeycodeToString } from "./keycode-map";
+import { zmkHidToKeyName } from "../keymap/zmk-hid-usage";
 
 /** Path to the helper script.
  * In dev mode, the extension source is at environment.extensionPath (if available)
@@ -253,42 +254,28 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
     );
   });
 
-  // Convert ZMK bindings to display-friendly keycodes
+  // Convert ZMK bindings to display-friendly keycodes (ZMK-native)
+  // Params are HID usage codes → zmkHidToKeyName → KC_{ZMK_NAME} → ZMK_LABELS
+  function zp(param: number): string {
+    return `KC_${zmkHidToKeyName(param)}`;
+  }
+
   const layers: Layer[] = result.layers.map((layer, index) => ({
     index,
     name: layer.name || `Layer ${index}`,
     keycodes: layer.bindings.map((b) => {
-      // Build a ZMK-style binding string for our existing parser
-      if (b.behavior === "key_press" || b.behavior === "&kp") {
-        return numericKeycodeToString(b.param1);
-      }
-      if (b.behavior === "momentary_layer" || b.behavior === "&mo") {
-        return `MO(${b.param1})`;
-      }
-      if (b.behavior === "layer_tap" || b.behavior === "&lt") {
-        return `LT(${b.param1}, ${numericKeycodeToString(b.param2)})`;
-      }
-      if (b.behavior === "mod_tap" || b.behavior === "&mt") {
-        return `MT(${numericKeycodeToString(b.param1)}, ${numericKeycodeToString(b.param2)})`;
-      }
-      if (b.behavior === "transparent" || b.behavior === "&trans") {
-        return "KC_TRNS";
-      }
-      if (b.behavior === "none" || b.behavior === "&none") {
-        return "KC_NO";
-      }
-      if (b.behavior === "toggle_layer" || b.behavior === "&tog") {
-        return `TG(${b.param1})`;
-      }
-      if (b.behavior === "to_layer" || b.behavior === "&to") {
-        return `TO(${b.param1})`;
-      }
-      // Fallback: show behavior name
-      return (
-        b.behavior +
-        (b.param1 ? ` ${b.param1}` : "") +
-        (b.param2 ? ` ${b.param2}` : "")
-      );
+      const n = b.behavior;
+      if (n === "key_press" || n === "&kp" || n === "Key Press") return zp(b.param1);
+      if (n === "momentary_layer" || n === "&mo" || n === "Momentary Layer") return `MO(${b.param1})`;
+      if (n === "layer_tap" || n === "&lt" || n === "Layer-Tap") return `LT(${b.param1}, ${zp(b.param2)})`;
+      if (n === "mod_tap" || n === "&mt" || n === "Mod-Tap") return `MT(${zp(b.param1)}, ${zp(b.param2)})`;
+      if (n === "transparent" || n === "&trans" || n === "Transparent") return "KC_TRNS";
+      if (n === "none" || n === "&none" || n === "None") return "KC_NO";
+      if (n === "toggle_layer" || n === "&tog" || n === "Toggle Layer") return `TG(${b.param1})`;
+      if (n === "to_layer" || n === "&to" || n === "To Layer") return `TO(${b.param1})`;
+      if (n === "sticky_key" || n === "&sk" || n === "Sticky Key") return `OSM(${zp(b.param1)})`;
+      if (n === "sticky_layer" || n === "&sl" || n === "Sticky Layer") return `OSL(${b.param1})`;
+      return n + (b.param1 ? ` ${b.param1}` : "") + (b.param2 ? ` ${b.param2}` : "");
     }),
   }));
 

@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as crypto from "crypto";
 import { PhysicalKey, RenderOptions, SvgResult } from "../types";
@@ -13,7 +14,7 @@ import {
 } from "./geometry";
 import { renderKey } from "./key-renderer";
 
-const TMP_DIR = path.join("/tmp", "keyviz");
+const TMP_DIR = path.join(os.tmpdir(), "keyviz");
 
 /** In-memory cache: hash → SvgResult */
 const svgCache = new Map<string, SvgResult>();

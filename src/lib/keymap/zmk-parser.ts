@@ -103,8 +103,10 @@ export function parseZmkKeymap(
   cleaned = cleaned.replace(/^#.*$/gm, "");
 
   // Find the keymap node
+  // Greedy match — captures everything between "zmk,keymap"; and the last };
+  // that closes the keymap block
   const keymapMatch = cleaned.match(
-    /keymap\s*\{[\s\S]*?compatible\s*=\s*"zmk,keymap"\s*;([\s\S]*?)\n\s*\};/,
+    /keymap\s*\{[\s\S]*?compatible\s*=\s*"zmk,keymap"\s*;([\s\S]*)\n\s*\};/,
   );
   if (!keymapMatch) {
     throw new Error(

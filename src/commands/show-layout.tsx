@@ -173,12 +173,15 @@ export default function ShowLayoutCommand() {
 
   function nextLayer() {
     setShowAll(false);
-    setCurrentLayer((i) => (i + 1) % board.layers.length);
+    setCurrentLayer((i) => (i + 1) % (board?.layers.length ?? 1));
   }
 
   function prevLayer() {
     setShowAll(false);
-    setCurrentLayer((i) => (i - 1 + board.layers.length) % board.layers.length);
+    setCurrentLayer((i) => {
+      const n = board?.layers.length ?? 1;
+      return (i - 1 + n) % n;
+    });
   }
 
   const appearance = environment.appearance;

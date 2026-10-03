@@ -1,5 +1,20 @@
 # Keyboard Layout Visualizer Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Keycodes 0x0005 and 0x001f were shown as `QMK_LM_SHIFT`/`QMK_LM_MASK` instead of `KC_B`/`KC_2` on boards read over USB.
+- SVG cache uses the OS temp directory instead of a hardcoded `/tmp` (Windows).
+- Verbose helper logging (`VIAL_DEBUG`) is opt-in instead of always on.
+- Node lookup for the USB helper checks `PATH`, version managers and Windows locations instead of one hardcoded path; `KEYVIZ_NODE` overrides it.
+- Layer cycling no longer assumes a loaded board.
+- ZMK keymap parsing captures the whole keymap block, not up to the first nested `};`.
+
+### Added
+
+- Unit test suite (vitest) run in CI, including the USB helper setup logic.
+
 ## [1.0.0] - 2026-03-26
 
 ### Added

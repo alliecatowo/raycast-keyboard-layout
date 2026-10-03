@@ -2,6 +2,13 @@
 
 A Raycast extension for QMK/ZMK keyboard enthusiasts. Visualize your custom keymaps, search for keys across layers, and manage multiple board profiles — all from your launcher.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/preview-dark.svg">
+  <img alt="A 48-key ortholinear layout rendered by the extension, with layer-key and navigation colour coding" src="docs/preview-light.svg">
+</picture>
+
+*Output of the extension's own renderer for a sample Planck-style keymap.*
+
 ## Commands
 
 - **View Keymap** — Display your active board's layout with layer switching (`Cmd+[`/`Cmd+]`, `Cmd+1`–`Cmd+9`)

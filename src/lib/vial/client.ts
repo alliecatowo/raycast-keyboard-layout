@@ -5,57 +5,31 @@ import * as nodeCrypto from "crypto";
 import { environment } from "@raycast/api";
 import { BoardProfile, Layer, PhysicalKey } from "../types";
 import { numericKeycodeToString } from "./keycode-map";
+import {
+  ensureHelperDir,
+  findNodeBinary,
+  helperEnv,
+  parseHelperResult,
+  zmkBindingToKeycode,
+} from "./helper-env";
 
-const HELPER_FILES = [
-  "vial-reader.js",
-  "zmk-reader.js",
-  "lzma-decompress.js",
-  "package.json",
-  "package-lock.json",
-];
-
-function hasNativeDeps(dir: string): boolean {
-  return (
-    fs.existsSync(path.join(dir, "node_modules", "node-hid")) &&
-    fs.existsSync(path.join(dir, "node_modules", "serialport"))
-  );
-}
-
-/** Directory holding the helper scripts together with their native deps.
- *
- * Raycast cannot bundle native addons (node-hid, serialport), so the helper
- * scripts ship in assets/helper (always present in the installed extension).
- * - Dev: if assets/helper/node_modules exists (npm install there) it is used as is.
- * - Installed: the scripts are copied to the extension's supportPath and
- *   `npm install --omit=dev` is run once. If that fails (no Node/npm on the
- *   machine, offline, ...) an error is thrown and USB detection is simply
- *   unavailable; callers surface the message and users can import a keymap file.
- */
 let helperDirCache: string | undefined;
 function getHelperDir(): string {
-  if (helperDirCache && hasNativeDeps(helperDirCache)) return helperDirCache;
-
-  const bundled = path.join(environment.assetsPath, "helper");
-  if (hasNativeDeps(bundled)) return (helperDirCache = bundled);
-
-  const target = path.join(environment.supportPath, "helper");
-  fs.mkdirSync(target, { recursive: true });
-  for (const f of HELPER_FILES) {
-    const src = path.join(bundled, f);
-    if (fs.existsSync(src)) fs.copyFileSync(src, path.join(target, f));
-  }
-  if (!hasNativeDeps(target)) {
-    const node = findNodeBinary();
-    const npm = path.join(
-      path.dirname(node),
-      process.platform === "win32" ? "npm.cmd" : "npm",
-    );
-    try {
+  if (helperDirCache) return helperDirCache;
+  helperDirCache = ensureHelperDir({
+    bundledDir: path.join(environment.assetsPath, "helper"),
+    supportDir: environment.supportPath,
+    install: (cwd) => {
+      const node = findNodeBinary();
+      const npm = path.join(
+        path.dirname(node),
+        process.platform === "win32" ? "npm.cmd" : "npm",
+      );
       execFileSync(
         fs.existsSync(npm) ? npm : "npm",
         ["install", "--omit=dev", "--no-audit", "--no-fund"],
         {
-          cwd: target,
+          cwd,
           timeout: 180000,
           env: {
             ...process.env,
@@ -63,33 +37,13 @@ function getHelperDir(): string {
           },
         },
       );
-    } catch (e) {
-      throw new Error(
-        "USB detection is unavailable: could not install the native helper dependencies " +
-          "(node-hid, serialport). Install Node.js + npm, or import a keymap file instead. " +
-          `Details: ${e instanceof Error ? e.message : String(e)}`,
-      );
-    }
-  }
-  return (helperDirCache = target);
+    },
+  });
+  return helperDirCache;
 }
 
 function getHelperPath(): string {
   return path.join(getHelperDir(), "vial-reader.js");
-}
-
-/** Find a working node binary that can load native modules */
-function findNodeBinary(): string {
-  const candidates = [
-    process.env.HOME + "/.local/share/mise/installs/node/24.9.0/bin/node",
-    "/opt/homebrew/bin/node",
-    "/usr/local/bin/node",
-    "/usr/bin/node",
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return "node"; // fall back to PATH
 }
 
 interface VialDevice {
@@ -147,47 +101,14 @@ function runHelper(args: string[]): Promise<unknown> {
     execFile(
       nodePath,
       [helperPath, ...args],
-      {
-        timeout: 30000,
-        env: {
-          ...process.env,
-          NODE_PATH: path.join(helperPath, "..", "node_modules"),
-          VIAL_DEBUG: "1", // Enable verbose logging
-        },
-      },
+      { timeout: 30000, env: helperEnv(helperPath) },
       (error, stdout, stderr) => {
-        // Always log stderr for debugging
-        if (stderr) {
+        if (stderr && process.env.VIAL_DEBUG === "1") {
           console.log("[vial-helper]", stderr.trim());
         }
-
-        if (error) {
-          // Try to parse error from stdout (helper outputs JSON errors)
-          try {
-            const parsed = JSON.parse(stdout);
-            if (parsed.error) {
-              reject(new Error(parsed.error));
-              return;
-            }
-          } catch {
-            // ignore parse error
-          }
-          reject(new Error(stderr || error.message));
-          return;
-        }
-
-        try {
-          const parsed = JSON.parse(stdout);
-          if (parsed.error) {
-            reject(new Error(parsed.error));
-            return;
-          }
-          resolve(parsed);
-        } catch {
-          reject(
-            new Error(`Failed to parse helper output: ${stdout.slice(0, 200)}`),
-          );
-        }
+        const result = parseHelperResult(error, stdout, stderr);
+        if (result.ok) resolve(result.value);
+        else reject(result.error);
       },
     );
   });
@@ -218,10 +139,7 @@ export async function detectZmkDevices(): Promise<VialDevice[]> {
         [zmkHelperPath, "detect"],
         {
           timeout: 15000,
-          env: {
-            ...process.env,
-            NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
-          },
+          env: helperEnv(zmkHelperPath),
         },
         (error, stdout, stderr) => {
           if (stderr) console.log("[zmk-helper]", stderr.trim());
@@ -266,10 +184,7 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
       [zmkHelperPath, "read", portPath],
       {
         timeout: 30000,
-        env: {
-          ...process.env,
-          NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
-        },
+        env: helperEnv(zmkHelperPath),
       },
       (error, stdout, stderr) => {
         if (stderr) console.log("[zmk-helper]", stderr.trim());
@@ -304,39 +219,9 @@ export async function readZmkKeyboard(portPath: string): Promise<BoardProfile> {
   const layers: Layer[] = result.layers.map((layer, index) => ({
     index,
     name: layer.name || `Layer ${index}`,
-    keycodes: layer.bindings.map((b) => {
-      // Build a ZMK-style binding string for our existing parser
-      if (b.behavior === "key_press" || b.behavior === "&kp") {
-        return numericKeycodeToString(b.param1);
-      }
-      if (b.behavior === "momentary_layer" || b.behavior === "&mo") {
-        return `MO(${b.param1})`;
-      }
-      if (b.behavior === "layer_tap" || b.behavior === "&lt") {
-        return `LT(${b.param1}, ${numericKeycodeToString(b.param2)})`;
-      }
-      if (b.behavior === "mod_tap" || b.behavior === "&mt") {
-        return `MT(${numericKeycodeToString(b.param1)}, ${numericKeycodeToString(b.param2)})`;
-      }
-      if (b.behavior === "transparent" || b.behavior === "&trans") {
-        return "KC_TRNS";
-      }
-      if (b.behavior === "none" || b.behavior === "&none") {
-        return "KC_NO";
-      }
-      if (b.behavior === "toggle_layer" || b.behavior === "&tog") {
-        return `TG(${b.param1})`;
-      }
-      if (b.behavior === "to_layer" || b.behavior === "&to") {
-        return `TO(${b.param1})`;
-      }
-      // Fallback: show behavior name
-      return (
-        b.behavior +
-        (b.param1 ? ` ${b.param1}` : "") +
-        (b.param2 ? ` ${b.param2}` : "")
-      );
-    }),
+    keycodes: layer.bindings.map((b) =>
+      zmkBindingToKeycode(b, numericKeycodeToString),
+    ),
   }));
 
   const now = new Date().toISOString();
@@ -469,10 +354,7 @@ export async function readZmkLockStatus(portPath: string): Promise<{
       [zmkHelperPath, "lock-status", portPath],
       {
         timeout: 10000,
-        env: {
-          ...process.env,
-          NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
-        },
+        env: helperEnv(zmkHelperPath),
       },
       (error, stdout, stderr) => {
         if (stderr) console.log("[zmk-helper]", stderr.trim());
@@ -508,10 +390,7 @@ export async function writeZmkLayerName(
       [zmkHelperPath, "set-layer-name", portPath, String(layerId), name],
       {
         timeout: 10000,
-        env: {
-          ...process.env,
-          NODE_PATH: path.join(zmkHelperPath, "..", "node_modules"),
-        },
+        env: helperEnv(zmkHelperPath),
       },
       (error, stdout, stderr) => {
         if (stderr) console.log("[zmk-helper]", stderr.trim());

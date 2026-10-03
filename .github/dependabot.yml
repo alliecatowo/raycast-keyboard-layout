@@ -15,7 +15,7 @@ updates:
 - package-ecosystem: npm
   directories:
   - /
-  - /helper
+  - /assets/helper
   schedule:
     interval: weekly
   groups:
@@ -23,3 +23,13 @@ updates:
       update-types:
       - minor
       - patch
+  ignore:
+  # typescript-eslint does not support TypeScript 7 yet (open:
+  # https://github.com/typescript-eslint/typescript-eslint/issues/10940).
+  - dependency-name: typescript
+    versions:
+    - ">=7"
+  # Raycast runs extensions on Node 22; keep the types on the runtime's major.
+  - dependency-name: "@types/node"
+    update-types:
+    - version-update:semver-major

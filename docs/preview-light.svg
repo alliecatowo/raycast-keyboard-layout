@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="796" height="284" viewBox="0 0 796 284">
+  <g>
+    <rect x="14" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="17" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="44" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="14" fill="#1a1a1a">Tab</text>
+  </g>
+  <g>
+    <rect x="78" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="81" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="108" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">Q</text>
+  </g>
+  <g>
+    <rect x="142" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="145" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="172" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">W</text>
+  </g>
+  <g>
+    <rect x="206" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="209" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="236" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">E</text>
+  </g>
+  <g>
+    <rect x="270" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="273" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="300" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">R</text>
+  </g>
+  <g>
+    <rect x="334" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="337" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="364" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">T</text>
+  </g>
+  <g>
+    <rect x="398" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="401" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="428" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">Y</text>
+  </g>
+  <g>
+    <rect x="462" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="465" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="492" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">U</text>
+  </g>
+  <g>
+    <rect x="526" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="529" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="556" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">I</text>
+  </g>
+  <g>
+    <rect x="590" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="593" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="620" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">O</text>
+  </g>
+  <g>
+    <rect x="654" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="657" y="17" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="684" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">P</text>
+  </g>
+  <g>
+    <rect x="718" y="14" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="721" y="17" width="54" height="53" rx="6" fill="#d4efd4" stroke="none" opacity="1"/>
+    <text x="748" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Bksp</text>
+  </g>
+  <g>
+    <rect x="14" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="17" y="81" width="54" height="53" rx="6" fill="#d4efd4" stroke="none" opacity="1"/>
+    <text x="44" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="14" fill="#1a1a1a">Esc</text>
+  </g>
+  <g>
+    <rect x="78" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="81" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="108" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">A</text>
+  </g>
+  <g>
+    <rect x="142" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="145" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="172" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">S</text>
+  </g>
+  <g>
+    <rect x="206" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="209" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="236" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">D</text>
+  </g>
+  <g>
+    <rect x="270" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="273" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="300" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">F</text>
+  </g>
+  <g>
+    <rect x="334" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="337" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="364" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">G</text>
+  </g>
+  <g>
+    <rect x="398" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="401" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="428" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">H</text>
+  </g>
+  <g>
+    <rect x="462" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="465" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="492" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">J</text>
+  </g>
+  <g>
+    <rect x="526" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="529" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="556" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">K</text>
+  </g>
+  <g>
+    <rect x="590" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="593" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="620" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">L</text>
+  </g>
+  <g>
+    <rect x="654" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="657" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="684" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">;</text>
+  </g>
+  <g>
+    <rect x="718" y="78" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="721" y="81" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="748" y="109" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">'</text>
+  </g>
+  <g>
+    <rect x="14" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="17" y="145" width="54" height="53" rx="6" fill="#dce4ed" stroke="none" opacity="1"/>
+    <text x="44" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Shift</text>
+  </g>
+  <g>
+    <rect x="78" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="81" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="108" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">Z</text>
+  </g>
+  <g>
+    <rect x="142" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="145" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="172" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">X</text>
+  </g>
+  <g>
+    <rect x="206" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="209" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="236" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">C</text>
+  </g>
+  <g>
+    <rect x="270" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="273" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="300" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">V</text>
+  </g>
+  <g>
+    <rect x="334" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="337" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="364" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">B</text>
+  </g>
+  <g>
+    <rect x="398" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="401" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="428" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">N</text>
+  </g>
+  <g>
+    <rect x="462" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="465" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="492" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">M</text>
+  </g>
+  <g>
+    <rect x="526" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="529" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="556" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">,</text>
+  </g>
+  <g>
+    <rect x="590" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="593" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="620" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">.</text>
+  </g>
+  <g>
+    <rect x="654" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="657" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="684" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="17" fill="#1a1a1a">/</text>
+  </g>
+  <g>
+    <rect x="718" y="142" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="721" y="145" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="748" y="173" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Enter</text>
+  </g>
+  <g>
+    <rect x="14" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="17" y="209" width="54" height="53" rx="6" fill="#dce4ed" stroke="none" opacity="1"/>
+    <text x="44" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Ctrl</text>
+  </g>
+  <g>
+    <rect x="78" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="81" y="209" width="54" height="53" rx="6" fill="#dce4ed" stroke="none" opacity="1"/>
+    <text x="108" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="14" fill="#1a1a1a">Cmd</text>
+  </g>
+  <g>
+    <rect x="142" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="145" y="209" width="54" height="53" rx="6" fill="#dce4ed" stroke="none" opacity="1"/>
+    <text x="172" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="14" fill="#1a1a1a">Alt</text>
+  </g>
+  <g>
+    <rect x="206" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="209" y="209" width="54" height="53" rx="6" fill="#d4deff" stroke="none" opacity="1"/>
+    <text x="236" y="233" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">MO(1)</text>
+    <text x="258" y="256" text-anchor="end" dominant-baseline="auto" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="10" fill="#888888">L1</text>
+  </g>
+  <g>
+    <rect x="270" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="273" y="209" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="300" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Space</text>
+  </g>
+  <g>
+    <rect x="334" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="337" y="209" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="364" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Space</text>
+  </g>
+  <g>
+    <rect x="398" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="401" y="209" width="54" height="53" rx="6" fill="#f5f5f5" stroke="none" opacity="1"/>
+    <text x="428" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Space</text>
+  </g>
+  <g>
+    <rect x="462" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="465" y="209" width="54" height="53" rx="6" fill="#d4deff" stroke="none" opacity="1"/>
+    <text x="492" y="233" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">MO(2)</text>
+    <text x="514" y="256" text-anchor="end" dominant-baseline="auto" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="10" fill="#888888">L2</text>
+  </g>
+  <g>
+    <rect x="526" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="529" y="209" width="54" height="53" rx="6" fill="#d4efd4" stroke="none" opacity="1"/>
+    <text x="556" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Left</text>
+  </g>
+  <g>
+    <rect x="590" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="593" y="209" width="54" height="53" rx="6" fill="#d4efd4" stroke="none" opacity="1"/>
+    <text x="620" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Down</text>
+  </g>
+  <g>
+    <rect x="654" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="657" y="209" width="54" height="53" rx="6" fill="#d4efd4" stroke="none" opacity="1"/>
+    <text x="684" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="14" fill="#1a1a1a">Up</text>
+  </g>
+  <g>
+    <rect x="718" y="206" width="60" height="60" rx="7" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="1"/>
+    <rect x="721" y="209" width="54" height="53" rx="6" fill="#d4efd4" stroke="none" opacity="1"/>
+    <text x="748" y="237" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace" font-size="12" fill="#1a1a1a">Right</text>
+  </g>
+</svg>

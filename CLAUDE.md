@@ -11,6 +11,9 @@ npm install                    # Extension dependencies
 npm run dev                    # Raycast dev mode (hot reload)
 npm run build                  # Production build
 npm run lint                   # ESLint + Prettier + Raycast validation
+npm run typecheck              # tsc --noEmit
+npm test                       # vitest (unit tests; USB helper process is not exercised)
+npm run test:coverage          # with coverage thresholds
 npm run fix-lint               # Auto-fix formatting
 ```
 

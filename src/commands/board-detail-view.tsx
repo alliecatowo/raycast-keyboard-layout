@@ -1,4 +1,11 @@
-import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Detail,
+  environment,
+  Icon,
+  Keyboard,
+} from "@raycast/api";
 import { useState } from "react";
 import { BoardProfile } from "../lib/types";
 import { generateSvg } from "../lib/svg/renderer";
@@ -72,7 +79,7 @@ export default function BoardDetailView({ board }: { board: BoardProfile }) {
               title="Add Board"
               icon={Icon.Plus}
               target={<AddBoardCommand />}
-              shortcut={{ modifiers: ["cmd"], key: "n" }}
+              shortcut={Keyboard.Shortcut.Common.New}
             />
             <Action.OpenInBrowser
               title={fwConfig.configuratorLabel}

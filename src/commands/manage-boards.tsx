@@ -9,6 +9,7 @@ import {
   Icon,
   showToast,
   Toast,
+  Keyboard,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
@@ -132,7 +133,7 @@ export default function ManageBoardsCommand() {
                     title="Add Board"
                     icon={Icon.Plus}
                     target={<AddBoardCommand />}
-                    shortcut={{ modifiers: ["cmd"], key: "n" }}
+                    shortcut={Keyboard.Shortcut.Common.New}
                   />
                   <Action.OpenInBrowser
                     title={getFirmwareConfig(board.firmware).configuratorLabel}

@@ -78,17 +78,19 @@ Raycast Extension (TypeScript/React)
   ├── Keycode Parser (QMK numeric → display label pipeline)
   ├── Storage (LocalStorage for board profiles + layout cache)
   └── child_process
-        ├── helper/vial-reader.js (node-hid → USB HID RAW → Vial protocol)
-        └── helper/zmk-reader.js (serialport → CDC-ACM → protobuf → ZMK Studio)
+        ├── assets/helper/vial-reader.js (node-hid → USB HID RAW → Vial protocol)
+        └── assets/helper/zmk-reader.js (serialport → CDC-ACM → protobuf → ZMK Studio)
 ```
 
 Helper processes are needed because Raycast extensions can't load native Node.js addons (`node-hid`, `serialport`). The helpers run as separate Node.js processes and communicate via JSON over stdio.
+
+**Installed extension:** the helper scripts ship in `assets/`. On first USB use they are copied to the extension's support directory and `npm install --omit=dev` fetches `node-hid`/`serialport` (prebuilt binaries). This needs Node.js + npm on the machine; if it fails, USB detection reports a clear error and you can still import a keymap file. Native modules cannot be bundled into the Raycast build itself.
 
 ## Development
 
 ```bash
 npm install
-cd helper && npm install && cd ..  # Install helper native dependencies
+(optional in dev) cd assets/helper && npm install && cd ../..
 npm run dev    # Start Raycast dev mode
 npm run build  # Build for production
 npm run lint   # Lint with Raycast ESLint config

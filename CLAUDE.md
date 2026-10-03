@@ -7,7 +7,7 @@ reads boards over USB (Vial HID + ZMK Studio serial), manages multiple profiles.
 ## Build & Test
 ```bash
 npm install                    # Extension dependencies
-cd helper && npm install       # Native USB helper dependencies
+(cd assets/helper && npm install)  # Native USB helper deps (dev only)
 npm run dev                    # Raycast dev mode (hot reload)
 npm run build                  # Production build
 npm run lint                   # ESLint + Prettier + Raycast validation
@@ -21,7 +21,7 @@ npm run fix-lint               # Auto-fix formatting
 - `src/lib/vial/` — USB communication client (spawns helper processes)
 - `src/lib/firmware/` — Polymorphic firmware adapter pattern (Vial + ZMK)
 - `src/lib/storage/` — LocalStorage CRUD for board profiles
-- `helper/` — Standalone Node.js scripts for USB HID/serial communication
+- `assets/helper/` — Standalone Node.js scripts for USB HID/serial communication
   - `vial-reader.js` — Vial protocol (node-hid, LZMA decompression)
   - `zmk-reader.js` — ZMK Studio protocol (serialport, protobuf)
   - `lzma-decompress.js` — XZ/LZMA decompression with Python fallback

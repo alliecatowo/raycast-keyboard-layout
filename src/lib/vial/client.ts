@@ -1,4 +1,4 @@
-import { execFile } from "child_process";
+import { execFile, execFileSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import * as nodeCrypto from "crypto";
@@ -6,34 +6,76 @@ import { environment } from "@raycast/api";
 import { BoardProfile, Layer, PhysicalKey } from "../types";
 import { numericKeycodeToString } from "./keycode-map";
 
-/** Path to the helper script.
- * In dev mode, the extension source is at environment.extensionPath (if available)
- * or we resolve from the assetsPath. The helper lives in the source repo, not the
- * Raycast install directory, since native modules can't be bundled.
+const HELPER_FILES = [
+  "vial-reader.js",
+  "zmk-reader.js",
+  "lzma-decompress.js",
+  "package.json",
+  "package-lock.json",
+];
+
+function hasNativeDeps(dir: string): boolean {
+  return (
+    fs.existsSync(path.join(dir, "node_modules", "node-hid")) &&
+    fs.existsSync(path.join(dir, "node_modules", "serialport"))
+  );
+}
+
+/** Directory holding the helper scripts together with their native deps.
+ *
+ * Raycast cannot bundle native addons (node-hid, serialport), so the helper
+ * scripts ship in assets/helper (always present in the installed extension).
+ * - Dev: if assets/helper/node_modules exists (npm install there) it is used as is.
+ * - Installed: the scripts are copied to the extension's supportPath and
+ *   `npm install --omit=dev` is run once. If that fails (no Node/npm on the
+ *   machine, offline, ...) an error is thrown and USB detection is simply
+ *   unavailable; callers surface the message and users can import a keymap file.
  */
-function getHelperPath(): string {
-  // The helper lives in the source repo alongside package.json
-  // environment.assetsPath points to the installed extension's assets/ dir
-  // We need to find the SOURCE directory where helper/ lives
-  const candidates = [
-    // Dev mode: resolve from extension source path
-    path.join(environment.assetsPath, "..", "helper", "vial-reader.js"),
-    // Source directory (hardcoded for dev — will be configurable later)
-    path.join(
-      process.env.HOME || "~",
-      "Develop",
-      "raycast-keyboard-layout",
-      "helper",
-      "vial-reader.js",
-    ),
-  ];
+let helperDirCache: string | undefined;
+function getHelperDir(): string {
+  if (helperDirCache && hasNativeDeps(helperDirCache)) return helperDirCache;
 
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+  const bundled = path.join(environment.assetsPath, "helper");
+  if (hasNativeDeps(bundled)) return (helperDirCache = bundled);
+
+  const target = path.join(environment.supportPath, "helper");
+  fs.mkdirSync(target, { recursive: true });
+  for (const f of HELPER_FILES) {
+    const src = path.join(bundled, f);
+    if (fs.existsSync(src)) fs.copyFileSync(src, path.join(target, f));
   }
+  if (!hasNativeDeps(target)) {
+    const node = findNodeBinary();
+    const npm = path.join(
+      path.dirname(node),
+      process.platform === "win32" ? "npm.cmd" : "npm",
+    );
+    try {
+      execFileSync(
+        fs.existsSync(npm) ? npm : "npm",
+        ["install", "--omit=dev", "--no-audit", "--no-fund"],
+        {
+          cwd: target,
+          timeout: 180000,
+          env: {
+            ...process.env,
+            PATH: `${path.dirname(node)}${path.delimiter}${process.env.PATH ?? ""}`,
+          },
+        },
+      );
+    } catch (e) {
+      throw new Error(
+        "USB detection is unavailable: could not install the native helper dependencies " +
+          "(node-hid, serialport). Install Node.js + npm, or import a keymap file instead. " +
+          `Details: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+  return (helperDirCache = target);
+}
 
-  // Fallback
-  return candidates[candidates.length - 1];
+function getHelperPath(): string {
+  return path.join(getHelperDir(), "vial-reader.js");
 }
 
 /** Find a working node binary that can load native modules */
@@ -93,7 +135,12 @@ interface VialReadResult {
 
 /** Run the helper process and parse JSON output */
 function runHelper(args: string[]): Promise<unknown> {
-  const helperPath = getHelperPath();
+  let helperPath: string;
+  try {
+    helperPath = getHelperPath();
+  } catch (e) {
+    return Promise.reject(e);
+  }
   const nodePath = findNodeBinary();
 
   return new Promise((resolve, reject) => {

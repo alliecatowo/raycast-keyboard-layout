@@ -7,7 +7,7 @@
   "dependencies": {
     "lzma": "^2.3.2",
     "node-hid": "^3.1.0",
-    "protobufjs": "^8.0.0",
+    "protobufjs": "^8.6.6",
     "serialport": "^13.0.0"
   }
 }

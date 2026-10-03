@@ -238,12 +238,7 @@ const HIGH_CONTRAST_DARK: ColorPalette = {
 // ── Theme Registry ───────────────────────────────────────
 
 export type ThemeId =
-  | "auto"
-  | "minimal"
-  | "catppuccin"
-  | "nord"
-  | "solarized"
-  | "highcontrast";
+  "auto" | "minimal" | "catppuccin" | "nord" | "solarized" | "highcontrast";
 
 interface ThemeDefinition {
   id: ThemeId;

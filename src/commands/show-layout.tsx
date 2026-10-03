@@ -5,6 +5,7 @@ import {
   environment,
   getPreferenceValues,
   Icon,
+  Keyboard,
 } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { BoardProfile } from "../lib/types";
@@ -34,9 +35,7 @@ export default function ShowLayoutCommand() {
   const [showAll, setShowAll] = useState(true);
   const [splitView, setSplitView] = useState<"both" | "left" | "right">(
     (getPreferenceValues<Preferences>().defaultView as
-      | "both"
-      | "left"
-      | "right") || "both",
+      "both" | "left" | "right") || "both",
   );
   const [isLoading, setIsLoading] = useState(true);
   const [noBoards, setNoBoards] = useState(false);
@@ -334,7 +333,7 @@ export default function ShowLayoutCommand() {
               <Action
                 title="Refresh from Board"
                 icon={Icon.ArrowClockwise}
-                shortcut={{ modifiers: ["cmd"], key: "r" }}
+                shortcut={Keyboard.Shortcut.Common.Refresh}
                 onAction={async () => {
                   try {
                     const refreshFw = getFirmwareConfig(board.firmware);
@@ -354,7 +353,7 @@ export default function ShowLayoutCommand() {
               title="Add Board"
               icon={Icon.Plus}
               target={<AddBoardCommand />}
-              shortcut={{ modifiers: ["cmd"], key: "n" }}
+              shortcut={Keyboard.Shortcut.Common.New}
             />
             <Action.ShowInFinder
               title="Open SVG in Viewer"
@@ -373,7 +372,7 @@ export default function ShowLayoutCommand() {
                   return "";
                 }
               })()}
-              shortcut={{ modifiers: ["cmd", "shift"], key: "o" }}
+              shortcut={Keyboard.Shortcut.Common.OpenWith}
             />
             <Action.OpenInBrowser
               title={getFirmwareConfig(board.firmware).configuratorLabel}

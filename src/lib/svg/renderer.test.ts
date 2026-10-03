@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { generateSvg, clearSvgCache } from "./renderer";
 import { PhysicalKey, Layer } from "../types";
 
@@ -49,7 +51,7 @@ describe("generateSvg", () => {
       layers,
     });
     expect(fs.existsSync(result.filePath)).toBe(true);
-    expect(result.filePath).toContain("/tmp/keyviz/");
+    expect(result.filePath).toContain(path.join(os.tmpdir(), "keyviz"));
   });
 
   it("renders key labels in SVG", () => {
